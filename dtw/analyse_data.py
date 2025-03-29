@@ -2,7 +2,7 @@
 @author: Radoslaw Plawecki
 """
 
-from code.common import check_column_existence, make_blocks
+from project.common import check_column_existence, make_blocks
 from dtw import DTW
 import numpy as np
 import pandas as pd

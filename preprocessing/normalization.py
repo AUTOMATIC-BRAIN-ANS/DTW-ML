@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-from generalized_logistic import GeneralizedLogistic
+from project.preprocessing.generalized_logistic import GeneralizedLogistic
 
 
 class NormalizeData:

@@ -4,9 +4,10 @@ Sources:
 https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-interquartile-range-iqr-b55b9726363e
 """
 
-from code.common import use_latex, values_in_order, filter_toxa, check_column_existence, check_path
-from normalization import NormalizeData
-from nan_handler import NaNHandler as NaNH
+from project.common import (use_latex, values_in_order, filter_abp, filter_cbfv, check_column_existence, check_path,
+                            smooth_data)
+from project.preprocessing.normalization import NormalizeData
+from project.preprocessing.nan_handler import NaNHandler as NaNH
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -23,7 +24,7 @@ class PreprocessData:
         :raise IsADirectoryError: if a path exists but leads to, for example, directory instead of a file.
         :raise ValueError: if a file is not a CSV file.
         """
-        filepath = f"patients/raw/{filename}.csv"
+        filepath = f"C:/Python/ZSSI/data/extracted/macro/{filename}.csv"
         check_path(filepath)
         self.filename = filename
         data = pd.read_csv(filepath, delimiter=';')
@@ -53,16 +54,16 @@ class PreprocessData:
     def __assign_signals(df, first_column, second_column):
         """
         Method to assign signals to variables based on the specified column names, involving looking for artefacts in
-        the STO2 signal.
+        the CBFV signal.
         :param df: data.
         :param first_column: first column name.
         :param second_column: second column name.
         :return: signals to be assigned.
         """
-        if second_column == 'Toxa' or second_column == 'STO2':
-            s1, s2 = df[first_column], filter_toxa(df, col_sto2='STO2', col_filtered=second_column)
-        elif first_column == 'Toxa' or first_column == 'STO2':
-            s1, s2 = df[second_column], filter_toxa(df, col_sto2='STO2', col_filtered=first_column)
+        if second_column == 'CBFV':
+            s1, s2 = filter_abp(df, col_abp='ABP'), filter_cbfv(df, col_cbfv='CBFV')
+        elif first_column == 'CBFV':
+            s1, s2 = filter_abp(df, col_abp='ABP'), filter_cbfv(df, col_cbfv='CBFV')
         else:
             s1, s2 = df[first_column], df[second_column]
         return s1, s2
@@ -192,19 +193,42 @@ class PreprocessData:
         return (nd1.normalize(method=method, min_value=-1, max_value=1),
                 nd2.normalize(method=method, min_value=-1, max_value=1))
 
-    def get_first_signal_preprocessed(self):
+    def get_first_signal_normalized(self):
         """
         Getter to get a first, preprocessed signal.
         :return: first, preprocessed signal.
         """
         return self.normalize_signal(method='generalized-logistic')[0]
 
-    def get_second_signal_preprocessed(self):
+    def get_second_signal_normalized(self):
         """
         Getter to get a second, preprocessed signal.
         :return: second, preprocessed signal.
         """
         return self.normalize_signal(method='generalized-logistic')[1]
+
+    def smooth_signal(self):
+        """
+        Method to smooth signals using the Savitzky-Golay filter.
+        :return: smoothed signal.
+        """
+        s1, s2 = self.get_first_signal_interpolated(), self.get_second_signal_interpolated()
+        sm1, sm2 = smooth_data(s1), smooth_data(s2)
+        return sm1, sm2
+
+    def get_first_signal_smoothed(self):
+        """
+        Getter to get a first, preprocessed signal.
+        :return: first, preprocessed signal.
+        """
+        return self.smooth_signal()[0]
+
+    def get_second_signal_smoothed(self):
+        """
+        Getter to get a second, preprocessed signal.
+        :return: second, preprocessed signal.
+        """
+        return self.smooth_signal()[1]
 
     @staticmethod
     def get_time(s):
@@ -213,7 +237,7 @@ class PreprocessData:
         :param s: signal.
         :return: time.
         """
-        return np.linspace(0, len(s) * 10, len(s))
+        return np.linspace(0, len(s), len(s))
 
     def get_data_for_plot(self, s=None):
         """
@@ -223,16 +247,16 @@ class PreprocessData:
         """
         if s == 'first':
             signals = [self.get_first_signal(), self.get_first_signal_outliers_removed(),
-                       self.get_first_signal_interpolated(), self.get_first_signal_preprocessed()]
+                       self.get_first_signal_interpolated(), self.get_first_signal_smoothed()]
         elif s == 'second':
             signals = [self.get_second_signal(), self.get_second_signal_outliers_removed(),
-                       self.get_second_signal_interpolated(), self.get_second_signal_preprocessed()]
+                       self.get_second_signal_interpolated(), self.get_second_signal_smoothed()]
         else:
             raise ValueError(f"Alloweds signal are 'first' and 'second'! Got {s} instead.")
         timeseries = [self.get_time(signals[0]), self.get_time(signals[1]),
                       self.get_time(signals[2]), self.get_time(signals[3])]
         titles = ["(a) Sygnał nieprzetworzony", "(b) Sygnał po usunięciu wartości odstających",
-                  "(c) Sygnał zinterpolowany", "(d) Sygnał znormalizowany"]
+                  "(c) Sygnał zinterpolowany", "(d) Sygnał po wygładzeniu"]
         return timeseries, signals, titles
 
     def plot_signals(self, s=None, filename=None):
@@ -266,14 +290,13 @@ class PreprocessData:
             plt.savefig(f"plots/preprocessing/{filename}.pdf", format='pdf')
         plt.show()
 
-    def export_preprocessed_data(self, directory):
+    def export_preprocessed_data(self):
         """
         Method to export preprocessed data.
-        :param directory: directory to save preprocessed data.
         :return: None.
         """
         datetime, col1, col2 = "DateTime", self.first_column, self.second_column
-        s1, s2 = self.get_first_signal_preprocessed(), self.get_second_signal_preprocessed()
+        s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
         datetime_values = np.linspace(0, len(s1), len(s1))
         data = {
             datetime: datetime_values,
@@ -281,5 +304,5 @@ class PreprocessData:
             col2: s2
         }
         df = pd.DataFrame(data)
-        df.to_csv(f"patients/preprocessed/{directory}/{self.filename}_PP.csv", sep=';', index=False)
+        df.to_csv(f"data/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
         print("Data was exported!")

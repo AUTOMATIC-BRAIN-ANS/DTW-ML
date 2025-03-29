@@ -3,7 +3,7 @@
 """
 
 import pandas as pd
-from code.common import smooth_data
+from project.common import smooth_data
 import os
 
 

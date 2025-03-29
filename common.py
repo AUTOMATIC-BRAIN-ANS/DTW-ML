@@ -79,6 +79,25 @@ def make_blocks(s):
     return s
 
 
+def filter_abp(df, col_abp, max_diff=10):
+    """
+    Function to clear the ABP signal from artefacts (when difference between next values of ABP > 10).
+    :param df: data in the DataFrame format.
+    :param col_abp: column with values of the ABP signal.
+    :param max_diff: maximum value of next ABP values.
+    :return: cleared signal.
+    """
+    abp = df[col_abp].copy()
+    length = len(abp)
+    for i in range(1, length):
+        if abs(abp.iloc[i] - abp.iloc[i - 1]) > max_diff:
+            for j in range(i, length - 1):
+                if abp.iloc[j + 1] < abp.iloc[j]:
+                    break
+                abp[j] = np.nan
+    return abp
+
+
 def filter_cbfv(df, col_cbfv, min_value=20):
     """
     Function to clear the CBFV signal from artefacts (when CBFV < 20).
@@ -86,7 +105,6 @@ def filter_cbfv(df, col_cbfv, min_value=20):
     :param col_cbfv: column with values of the CBFV signal.
     :param min_value: minimum value of a range.
     :return: cleared signal.
-    :raise ValueError: if signals have different length.
     """
     cbfv = df[col_cbfv].copy()
     length = len(cbfv)

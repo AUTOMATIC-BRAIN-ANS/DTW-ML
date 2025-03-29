@@ -8,7 +8,7 @@ Access: 29.10.2024.
 https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb. Access: 29.10.2024.
 """
 
-from code.common import use_latex
+from project.common import use_latex
 import numpy as np
 import matplotlib.pyplot as plt
 
