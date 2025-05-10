@@ -287,7 +287,7 @@ class PreprocessData:
                 ax[i, j].grid()
                 k += 1
         if filename is not None:
-            plt.savefig(f"plots/preprocessing/{filename}.pdf", format='pdf')
+            plt.savefig(f"C:/Python/ZSSI/plots/preprocessing/{filename}.pdf", format='pdf')
         plt.show()
 
     def export_preprocessed_data(self):
@@ -304,5 +304,5 @@ class PreprocessData:
             col2: s2
         }
         df = pd.DataFrame(data)
-        df.to_csv(f"data/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
+        df.to_csv(f"C:/Python/ZSSI/data/preprocessed/macro/{self.filename}_PP.csv", sep=';', index=False)
         print("Data was exported!")
