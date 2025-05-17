@@ -5,6 +5,7 @@
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from os import path
+import pandas as pd
 import numpy as np
 
 
@@ -81,7 +82,7 @@ def make_blocks(s):
 
 def filter_abp(df, col_abp, max_diff=10):
     """
-    Function to clear the ABP signal from artefacts (when difference between next values of ABP > 10).
+    Function to clear the ABP signal from artefacts (when difference between next values of ABP > B10).
     :param df: data in the DataFrame format.
     :param col_abp: column with values of the ABP signal.
     :param max_diff: maximum value of next ABP values.
@@ -98,17 +99,36 @@ def filter_abp(df, col_abp, max_diff=10):
     return abp
 
 
-def filter_cbfv(df, col_cbfv, min_value=20):
+def filter_fv(df, col_fv, min_value=20):
     """
-    Function to clear the CBFV signal from artefacts (when CBFV < 20).
+    Function to clear the FV signal from artefacts (when FV < 20).
     :param df: data in the DataFrame format.
-    :param col_cbfv: column with values of the CBFV signal.
+    :param col_fv: column with values of the FV signal.
     :param min_value: minimum value of a range.
     :return: cleared signal.
     """
-    cbfv = df[col_cbfv].copy()
-    length = len(cbfv)
-    for i in range(1, length):
-        if cbfv[i] < min_value:
-            cbfv[i] = np.nan
-    return cbfv
+    fv = df[col_fv].copy()
+    length = len(fv)
+    for i in range(0, length):
+        if fv[i] < min_value:
+            fv[i] = np.nan
+    return fv
+
+
+def calculate_cbfv(df, col_fvl, col_fvr):
+    """
+    Function to calculate the CBFV signal based on the FV from left and right side.
+    :param df: data in the DataFrame format.
+    :param col_fvl: FV from the left side.
+    :param col_fvr: FV from the right side.
+    :return: CBFV signal.
+    """
+    fvl, fvr = filter_fv(df, col_fvl), filter_fv(df, col_fvr)
+    length = min(len(fvl), len(fvr))
+    cbfv = []
+    for i in range(0, length):
+        if fvl[i] > fvr[i]:
+            cbfv.append(fvl[i])
+        else:
+            cbfv.append(fvr[i])
+    return pd.Series(cbfv)

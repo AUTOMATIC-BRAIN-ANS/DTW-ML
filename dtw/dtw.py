@@ -3,9 +3,9 @@
 Sources:
 [1] Kamper, H. (2021). Dynamic time warping 2: Algorithm [Video]. YouTube.
 Available on: https://www.youtube.com/watch?v=X6phfLqN5pY&list=PLmZlBIcArwhMJoGk5zpiRlkaHUqy5dLzL&index=3.
-Access: 29.10.2024.
+Access: 29.B10.2024.
 [2] Kamper, H. (2021). Dynamic time warping (DTW) tutorial notebook. GitHub. Available on:
-https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb. Access: 29.10.2024.
+https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb. Access: 29.B10.2024.
 """
 
 from project.common import use_latex

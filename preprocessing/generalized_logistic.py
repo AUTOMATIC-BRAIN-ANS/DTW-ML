@@ -3,7 +3,7 @@
 Sources:
 [1] Cao, X. H., Stojkovic, I., & Obradovic, Z. (2016). A robust data scaling algorithm to improve classification
 accuracies in biomedical data. BMC Bioinformatics, 17, 359. Available on: https://doi.org/10.1186/s12859-016-1236-x.
-Access: 30.10.2024.
+Access: 30.B10.2024.
 """
 
 import numpy as np
@@ -66,7 +66,7 @@ class GeneralizedLogistic:
                 print(f"Error in computation: {e}!")
                 return np.inf
         # use a bounded optimization to find the root in a specific range
-        Q0_solution = fminbound(equation, 1e-5, 10)  # bound Q0 to positive range [1e-5, 10]
+        Q0_solution = fminbound(equation, 1e-5, 10)  # bound Q0 to positive range [1e-5, B10]
         return Q0_solution
 
     def initialize_parameters(self):

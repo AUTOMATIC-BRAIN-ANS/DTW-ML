@@ -4,7 +4,7 @@ Sources:
 https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-interquartile-range-iqr-b55b9726363e
 """
 
-from project.common import (use_latex, values_in_order, filter_abp, filter_cbfv, check_column_existence, check_path,
+from project.common import (use_latex, values_in_order, filter_abp, check_column_existence, check_path,
                             smooth_data)
 from project.preprocessing.normalization import NormalizeData
 from project.preprocessing.nan_handler import NaNHandler as NaNH
@@ -61,9 +61,9 @@ class PreprocessData:
         :return: signals to be assigned.
         """
         if second_column == 'CBFV':
-            s1, s2 = filter_abp(df, col_abp='ABP'), filter_cbfv(df, col_cbfv='CBFV')
+            s1, s2 = filter_abp(df, col_abp='ABP'), df[second_column]
         elif first_column == 'CBFV':
-            s1, s2 = filter_abp(df, col_abp='ABP'), filter_cbfv(df, col_cbfv='CBFV')
+            s1, s2 = filter_abp(df, col_abp='ABP'), df[second_column]
         else:
             s1, s2 = df[first_column], df[second_column]
         return s1, s2
@@ -295,6 +295,7 @@ class PreprocessData:
         Method to export preprocessed data.
         :return: None.
         """
+        print(f"File: {self.filename} being processed...")
         datetime, col1, col2 = "DateTime", self.first_column, self.second_column
         s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
         datetime_values = np.linspace(0, len(s1), len(s1))

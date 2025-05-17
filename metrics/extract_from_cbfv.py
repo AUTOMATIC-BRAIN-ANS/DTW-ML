@@ -6,6 +6,7 @@ from extract_cbfv import detect_peaks_troughs
 from project.common import use_latex
 from scipy.signal import find_peaks
 import numpy as np
+import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
@@ -124,7 +125,7 @@ class FromCBFV:
 
     def plot_window(self, wd_number=None, directory=None, file=None):
         output_dir = os.path.join("plots/cbfv_metrics", directory)
-        os.makedirs(output_dir, exist_ok=True)  # <-- this is the key
+        os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{file}.pdf")
 
         use_latex()
@@ -163,6 +164,31 @@ class FromCBFV:
         plt.plot(self.datetime, self.cbfv)
         plt.scatter(spp_locs, spp)
         plt.show()
+
+    def export_to_csv(self, filename, directory):
+        output_dir = os.path.join("data/metrics/macro", directory)
+        os.makedirs(output_dir, exist_ok=True)
+        _, spo = self.find_spo()
+        _, spp = self.find_spp()
+        _, dn = self.find_dn()
+        _, dpp = self.find_dpp()
+        datetime, col1, col2, col3, col4 = "DateTime", "CBFV_SPO", "CBFV_SPP", "CBFV_DN", "CBFV_DPP"
+        min_len = min(len(spo), len(spp), len(dn), len(dpp))
+        spo = spo[:min_len]
+        spp = spp[:min_len]
+        dn = dn[:min_len]
+        dpp = dpp[:min_len]
+        datetime_values = np.linspace(0, min_len, min_len)
+        data = {
+            datetime: datetime_values,
+            col1: spo,
+            col2: spp,
+            col3: dn,
+            col4: dpp
+        }
+        df = pd.DataFrame(data)
+        df.to_csv(f"C:/Python/ZSSI/data/metrics/macro/{filename}", sep=';', index=False)
+        print("Data was exported!")
 
     @staticmethod
     def convert_array(array):
