@@ -3,7 +3,6 @@
 """
 
 import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter
 from os import path
 import pandas as pd
 import numpy as np
@@ -19,14 +18,6 @@ def use_latex():
     plt.rcParams.update({
         'text.latex.preamble': r'\usepackage[utf8]{inputenc} \usepackage[T1]{fontenc}'
     })
-
-
-def smooth_data(s):
-    """
-    Function to smooth data using the Savitzky-Golay filter.
-    :return: smoothed signal.
-    """
-    return savgol_filter(s, window_length=20, polyorder=3)
 
 
 def check_column_existence(df, col):

@@ -4,10 +4,8 @@ Sources:
 https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-interquartile-range-iqr-b55b9726363e
 """
 
-from project.common import (use_latex, values_in_order, filter_abp, check_column_existence, check_path,
-                            smooth_data)
-from project.preprocessing.normalization import NormalizeData
-from project.preprocessing.nan_handler import NaNHandler as NaNH
+from project.common import use_latex, filter_abp, check_column_existence, check_path
+from project.utils.preprocessing_utils import PreprocessingUtils as prepUtils
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -24,7 +22,7 @@ class PreprocessData:
         :raise IsADirectoryError: if a path exists but leads to, for example, directory instead of a file.
         :raise ValueError: if a file is not a CSV file.
         """
-        filepath = f"C:/Python/ZSSI/data/extracted/macro/{filename}.csv"
+        filepath = f"C:/Python/ZSSI/data2/dtw/raw/{filename}.csv"
         check_path(filepath)
         self.filename = filename
         data = pd.read_csv(filepath, delimiter=';')
@@ -68,26 +66,6 @@ class PreprocessData:
             s1, s2 = df[first_column], df[second_column]
         return s1, s2
 
-    @staticmethod
-    def iqr_outlier_removal(s, threshold):
-        """
-        Method to detect and remove outliers using the IQR method.
-        :param s: signal.
-        :param threshold: threshold after which the outliers will be removed.
-        :return: signal with removed outliers.
-        """
-        q1 = np.nanpercentile(s, 25)
-        q3 = np.nanpercentile(s, 75)
-        iqr = q3 - q1
-        lower_bound = q1 - threshold * iqr
-        upper_bound = q3 + threshold * iqr
-        # copy signal to avoid modifying the original
-        s = np.array(s.copy())
-        for i in range(1, len(s)):
-            if s[i] < lower_bound or s[i] > upper_bound:
-                s[i] = np.nan
-        return s
-
     def remove_outliers(self, threshold=1.5):
         """
         Method to remove outliers using the method iqr_outlier_removal().
@@ -95,7 +73,7 @@ class PreprocessData:
         :return: signals with removed outliers.
         """
         s1, s2 = self.get_first_signal(), self.get_second_signal()
-        return self.iqr_outlier_removal(s1, threshold), self.iqr_outlier_removal(s2, threshold)
+        return prepUtils.iqr_outlier_removal(s1, threshold), prepUtils.iqr_outlier_removal(s2, threshold)
 
     def get_first_signal_outliers_removed(self):
         """
@@ -111,49 +89,28 @@ class PreprocessData:
         """
         return self.remove_outliers()[1]
 
-    @staticmethod
-    def trim_signals(s1, s2):
+    def trim_signals(self):
         """
-        Method to find new limits of signals depending on length of gaps.
-        :param s1: first signal.
-        :param s2: second signal.
-        :return: new limits of signals.
+        Method to trim signals using the trim() function.
+        :return: signals trimmed.
         """
-        nan_in_s1, nan_in_s2 = NaNH.get_nan_number(s1), NaNH.get_nan_number(s2)
-        if nan_in_s1 >= nan_in_s2:
-            s = pd.Series(s1)
-        else:
-            s = pd.Series(s2)
-        start, stop = 0, len(s)
-        nan_indices = s.index[s.isna()].tolist()
-        ordered_nans = values_in_order(nan_indices)
-        for count, loc in ordered_nans:
-            if count > 300:
-                if abs(start - loc) < abs(loc - stop):
-                    start = loc + count
-                else:
-                    stop = loc
-        return start, stop
+        s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
+        start, stop = prepUtils.trim(s1, s2)
+        return pd.Series(s1[start:stop]), pd.Series(s2[start:stop])
 
-    @staticmethod
-    def __fill_nans(s1, s2, method=None, order=None):
+    def get_first_signal_trimmed(self):
         """
-        Method to fill NaNs in signals using a specific method of interpolation.
-        :param s1: first signal.
-        :param s2: second signal.
-        :param method: method of interpolation.
-        :param order: if a method is polynomial, then its order.
-        :return: signals with filled NaNs.
-        :raise ValueError: if a signal has too many gaps.
+        Getter to get a first signal trimmed.
+        :return: first signal trimmed.
         """
-        ppd = PreprocessData
-        start, stop = ppd.trim_signals(s1, s2)
-        s1, s2 = pd.Series(s1[start:stop]), pd.Series(s2[start:stop])
-        s1, s2 = s1.interpolate(method=method, order=order), s2.interpolate(method=method, order=order)
-        if len(s1) < 600 or len(s2) < 600:
-            raise ValueError("Signal has too many gaps!")
-        else:
-            return s1, s2
+        return self.trim_signals()[0]
+
+    def get_second_signal_trimmed(self):
+        """
+        Getter to get a second signal trimmed.
+        :return: second signal trimmed.
+        """
+        return self.trim_signals()[1]
 
     def interpolate_signal(self, method=None, order=None):
         """
@@ -162,11 +119,8 @@ class PreprocessData:
         :param order: if a method is polynomial, then its order.
         :return: interpolated signals.
         """
-        s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
-        try:
-            return self.__fill_nans(s1, s2, method=method, order=order)
-        except ValueError as e:
-            print(f"Error occurred: {e}")
+        s1, s2 = self.get_first_signal_trimmed(), self.get_second_signal_trimmed()
+        return prepUtils.interpolate_data(s1, method=method, order=order), prepUtils.interpolate_data(s2, method=method, order=order)
 
     def get_first_signal_interpolated(self):
         """
@@ -182,16 +136,17 @@ class PreprocessData:
         """
         return self.interpolate_signal(method='linear')[1]
 
-    def normalize_signal(self, method):
+    def normalize_signal(self, method, min_value=-1, max_value=1):
         """
         Method to normalize signals using a specific method of normalization.
         :param method: method of normalization.
+        :param min_value: a minimum value.
+        :param max_value: a maximum value.
         :return: normalized signals.
         """
         s1, s2 = self.get_first_signal_interpolated(), self.get_second_signal_interpolated()
-        nd1, nd2 = NormalizeData(s1), NormalizeData(s2)
-        return (nd1.normalize(method=method, min_value=-1, max_value=1),
-                nd2.normalize(method=method, min_value=-1, max_value=1))
+        return (prepUtils.normalize(s1, method=method, min_value=min_value, max_value=max_value),
+                prepUtils.normalize(s2, method=method, min_value=min_value, max_value=max_value))
 
     def get_first_signal_normalized(self):
         """
@@ -213,8 +168,7 @@ class PreprocessData:
         :return: smoothed signal.
         """
         s1, s2 = self.get_first_signal_interpolated(), self.get_second_signal_interpolated()
-        sm1, sm2 = smooth_data(s1), smooth_data(s2)
-        return sm1, sm2
+        return prepUtils.smooth(s1), prepUtils.smooth(s2)
 
     def get_first_signal_smoothed(self):
         """
@@ -247,16 +201,16 @@ class PreprocessData:
         """
         if s == 'first':
             signals = [self.get_first_signal(), self.get_first_signal_outliers_removed(),
-                       self.get_first_signal_interpolated(), self.get_first_signal_smoothed()]
+                       self.get_first_signal_interpolated(), self.get_second_signal_normalized()]
         elif s == 'second':
             signals = [self.get_second_signal(), self.get_second_signal_outliers_removed(),
-                       self.get_second_signal_interpolated(), self.get_second_signal_smoothed()]
+                       self.get_second_signal_interpolated(), self.get_second_signal_normalized()]
         else:
-            raise ValueError(f"Alloweds signal are 'first' and 'second'! Got {s} instead.")
+            raise ValueError(f"Allowed signal are 'first' and 'second'! Got {s} instead.")
         timeseries = [self.get_time(signals[0]), self.get_time(signals[1]),
                       self.get_time(signals[2]), self.get_time(signals[3])]
         titles = ["(a) Sygnał nieprzetworzony", "(b) Sygnał po usunięciu wartości odstających",
-                  "(c) Sygnał zinterpolowany", "(d) Sygnał po wygładzeniu"]
+                  "(c) Sygnał zinterpolowany", "(d) Sygnał po normalizacji"]
         return timeseries, signals, titles
 
     def plot_signals(self, s=None, filename=None):
@@ -297,7 +251,7 @@ class PreprocessData:
         """
         print(f"File: {self.filename} being processed...")
         datetime, col1, col2 = "DateTime", self.first_column, self.second_column
-        s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
+        s1, s2 = self.get_first_signal_normalized(), self.get_second_signal_normalized()
         datetime_values = np.linspace(0, len(s1), len(s1))
         data = {
             datetime: datetime_values,
@@ -305,5 +259,5 @@ class PreprocessData:
             col2: s2
         }
         df = pd.DataFrame(data)
-        df.to_csv(f"C:/Python/ZSSI/data/preprocessed/macro/{self.filename}_PP.csv", sep=';', index=False)
+        df.to_csv(f"C:/Python/ZSSI/data2/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
         print("Data was exported!")

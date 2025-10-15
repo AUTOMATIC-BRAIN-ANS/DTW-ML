@@ -18,14 +18,34 @@ class DTW:
     __matches, __insertions, __deletions = 0, 0, 0
     __path = []
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, var=None):
         """
         Method to initialize params of a class.
         :param x: first signal.
         :param y: second signal.
         """
-        self.x = np.array(x)
-        self.y = np.array(y)
+        if var is None:
+            self.x = np.array(x)
+            self.y = np.array(y)
+        elif var == "DDTW":
+            self.x = self.derivative_signal(np.array(x))
+            self.y = self.derivative_signal(np.array(y))
+        else:
+            raise ValueError("Allowed variants of DTW: classic (var=None), derivative (var=DDTW).")
+
+    @staticmethod
+    def derivative_signal(s):
+        """
+        Method to calculate derivative for a signal.
+        :return: derivative from a signal.
+        """
+        s = np.array(s)
+        derivative = np.zeros_like(s, dtype=float)
+        for i in range(1, len(s) - 1):
+            derivative[i] = ((s[i] - s[i - 1]) + ((s[i + 1] - s[i - 1]) / 2)) / 2
+        derivative[0] = (s[1] - s[0])
+        derivative[-1] = (s[-1] - s[-2])
+        return derivative
 
     def __initialize_matrix(self):
         """
@@ -149,7 +169,7 @@ class DTW:
         len_traceback = matches + insertions + deletions
         return (insertions + deletions) / len_traceback
 
-    def __sliding_window_dtw(self, window_size, step, method):
+    def sliding_window_dtw(self, window_size, step, method):
         """
         Method to implement DTW with sliding window.
         :param window_size: size of a window.
@@ -193,7 +213,7 @@ class DTW:
         :return: list with alignment costs per window and the list with analyzed windows, and position of a window with
                  minimum or maximum alignment cost.
         """
-        alignment_costs, windows = self.__sliding_window_dtw(window_size, step, method)
+        alignment_costs, windows = self.sliding_window_dtw(window_size, step, method)
         alignment_cost = 0
         if min_max == "MIN":
             alignment_cost = np.min(alignment_costs)
@@ -239,7 +259,7 @@ class DTW:
         :param method: method to calculate alignment cost.
         :return: mean alignment cost.
         """
-        alignment_costs, windows = self.__sliding_window_dtw(window_size, step, method)
+        alignment_costs, windows = self.sliding_window_dtw(window_size, step, method)
         return np.mean(alignment_costs)
 
     def find_alignment_cost(self, method, look_for, window_size=10, step=1, filename=None):
@@ -313,7 +333,7 @@ class DTW:
             plt.savefig(f"{filename}.pdf", format='pdf')
         plt.show()
 
-    def plot_cost_matrix(self, x_signal=None, y_signal=None, filename=None):
+    def plot_cost_matrix(self, x_signal=None, y_signal=None, filename=None, ax=None):
         """
         Method to plot a cost matrix.
         :param x_signal: label for the x-signal.
@@ -322,17 +342,19 @@ class DTW:
         """
         use_latex()
         label_pad = 8
-        c = plt.imshow(self.fill_matrix()[1:, 1:], cmap=plt.get_cmap("Blues"), interpolation="nearest", origin="upper")
-        plt.colorbar(c)
+        matrix = self.fill_matrix()[1:, 1:]
+        if ax is None:
+            fig, ax = plt.subplots()
+        c = ax.imshow(matrix, cmap=plt.get_cmap("Blues"), interpolation="nearest", origin="upper")
+        plt.colorbar(c, ax=ax)
         x_path, y_path = zip(*self.__path[:-1])
-        plt.plot(y_path, x_path, color="#003A7D", linewidth=1.5)
-        plt.title("Macierz kosztów")
-        plt.xlabel(f"{x_signal}", labelpad=label_pad)
-        plt.ylabel(f"{y_signal}", labelpad=label_pad)
-        plt.legend(['Ścieżka dopasowania'])
+        ax.plot(y_path, x_path, color="#003A7D", linewidth=1.5)
+        ax.set_title("Macierz kosztów")
+        ax.set_xlabel(f"{x_signal}", labelpad=label_pad)
+        ax.set_ylabel(f"{y_signal}", labelpad=label_pad)
+        ax.legend(['Ścieżka dopasowania'])
         if filename is not None:
             plt.savefig(f"{filename}.pdf", format='pdf')
-        plt.show()
 
     def plot_alignment(self, filename=None):
         """

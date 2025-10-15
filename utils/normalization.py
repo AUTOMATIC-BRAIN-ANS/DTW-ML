@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-from project.preprocessing.generalized_logistic import GeneralizedLogistic
+from project.utils.generalized_logistic import GeneralizedLogistic
 
 
 class NormalizeData:
@@ -48,7 +48,7 @@ class NormalizeData:
         """
         return GeneralizedLogistic(data)()
 
-    def normalize(self, method=None, min_value=None, max_value=None):
+    def norm(self, method=None, min_value=None, max_value=None):
         """
         Method to normalise data using a given method.
         :param method: normalisation method.
