@@ -44,7 +44,7 @@ class PreprocessingUtils:
         """
         s = pd.Series(s)
         s = s.interpolate(method=method, order=order)
-        if len(s) < 600:
+        if len(s) < 20:
             raise ValueError("Signal has too many gaps!")
         else:
             return s

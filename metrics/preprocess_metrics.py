@@ -8,8 +8,9 @@ import pandas as pd
 
 
 class PreprocessMetrics:
-    def __init__(self, filename, label=None):
-        filepath = f"C:/Python/ZSSI/data2/dtw/raw/{filename}.csv"
+    def __init__(self, directory, filename, label=None):
+        self.directory = directory
+        filepath = f"C:/Python/ZSSI/data2/dtw/raw/{directory}/{filename}.csv"
         check_path(filepath)
         self.filename = filename
         data = pd.read_csv(filepath, delimiter=';')
@@ -38,29 +39,19 @@ class PreprocessMetrics:
         """
         print(f"File: {self.filename} being processed...")
         df = self.df
-        if 'C1' in self.filename:
-            datetime, abp_spo, abp_spp, abp_rr, cbfv_spo, cbfv_spp = ('DateTime', 'ABP_SPO', 'ABP_SPP',
-                                                                      'ABP_RR', 'CBFV_SPO', 'CBFV_SPP')
-            data = {
-                datetime: df['DateTime'],
-                abp_spo: PreprocessMetrics(filename=self.filename, label='ABP_SPO').get_metric_normalized(),
-                abp_spp: PreprocessMetrics(filename=self.filename, label='ABP_SPP').get_metric_normalized(),
-                abp_rr: PreprocessMetrics(filename=self.filename, label='ABP_RR').get_metric_normalized(),
-                cbfv_spo: PreprocessMetrics(filename=self.filename, label='CBFV_SPO').get_metric_normalized(),
-                cbfv_spp: PreprocessMetrics(filename=self.filename, label='CBFV_SPP').get_metric_normalized()
-            }
-            df = pd.DataFrame(data)
-            df.to_csv(f"C:/Python/ZSSI/data2/dtw/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
-            print("Data was exported!")
-        else:
-            datetime, abp_dn, abp_dpp, cbfv_dn, cbfv_dpp = 'DateTime', 'ABP_DN', 'ABP_DPP', 'CBFV_DN', 'CBFV_DPP'
-            data = {
-                datetime: df['DateTime'],
-                abp_dn: PreprocessMetrics(filename=self.filename, label='ABP_DN').get_metric_normalized(),
-                abp_dpp: PreprocessMetrics(filename=self.filename, label='ABP_DPP').get_metric_normalized(),
-                cbfv_dn: PreprocessMetrics(filename=self.filename, label='CBFV_DN').get_metric_normalized(),
-                cbfv_dpp: PreprocessMetrics(filename=self.filename, label='CBFV_DPP').get_metric_normalized()
-            }
-            df = pd.DataFrame(data)
-            df.to_csv(f"C:/Python/ZSSI/data2/dtw/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
-            print("Data was exported!")
+        datetime, abp_spo, abp_spp, abp_rr, cbfv_spo, cbfv_spp = ('DateTime', 'ABP_SPO', 'ABP_SPP', 'ABP_RR', 'CBFV_SPO', 'CBFV_SPP')
+        data = {
+            datetime: df['DateTime'],
+            abp_spo: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_SPO').get_metric_normalized(),
+            abp_spp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_SPP').get_metric_normalized(),
+            abp_rr: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_RR').get_metric_normalized(),
+            cbfv_spo: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_SPO').get_metric_normalized(),
+            cbfv_spp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_SPP').get_metric_normalized(),
+            # abp_dn: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_DN').get_metric_normalized(),
+            # abp_dpp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_DPP').get_metric_normalized(),
+            # cbfv_dn: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_DN').get_metric_normalized(),
+            # cbfv_dpp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_DPP').get_metric_normalized()
+        }
+        df = pd.DataFrame(data)
+        df.to_csv(f"C:/Python/ZSSI/data2/dtw/preprocessed/{self.directory}/{self.filename}_PP.csv", sep=';', index=False)
+        print("Data was exported!")

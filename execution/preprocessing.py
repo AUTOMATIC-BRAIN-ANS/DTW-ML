@@ -19,8 +19,11 @@ for file in os.listdir(dir_path):
 
 # METRICS PREPROCESSING
 base_dir = "C:/Python/ZSSI/data2/dtw/raw"
-for file in os.listdir(base_dir):
-    filename_without_extension = os.path.splitext(file)[0]
-    print(filename_without_extension)
-    prep = PreprocessMetrics(filename_without_extension)
-    print(prep.export_preprocessed_metrics())
+directories = os.listdir(base_dir)
+for directory in directories:
+    files = os.listdir(os.path.join(base_dir, directory))
+    for file in files:
+        filename_without_extension = os.path.splitext(file)[0]
+        print(filename_without_extension)
+        prep = PreprocessMetrics(directory=directory, filename=filename_without_extension)
+        print(prep.export_preprocessed_metrics())
