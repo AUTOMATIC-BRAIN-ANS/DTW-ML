@@ -182,15 +182,15 @@ class DTW:
         if step <= 0:
             raise ValueError("Step must have a positive value!")
         x, y = self.x, self.y
-        windows = []
-        alignment_costs = []
+        alignment_costs, windows, alignment_matrices = [], [], []
         for i in range(0, max(len(x), len(y)) - window_size + 1, step):
             window = [i, window_size + i]
             dtw = DTW(x[window[0]:window[1]], y[window[0]:window[1]])
+            alignment_matrices.append(dtw.fill_matrix()[1:, 1:])
             alignment_cost = dtw.calc_alignment_cost(method=method)
             windows.append(window)
             alignment_costs.append(alignment_cost)
-        return alignment_costs, windows
+        return alignment_costs, windows, alignment_matrices
 
     def __perform_dtw_window(self, windows, pos, filename=None):
         """

@@ -6,7 +6,7 @@ import os
 import pandas as pd
 
 metric = "ABP_SPP-CBFV_SPP"
-data_path = "C:/Python/ZSSI/data2/dtw/reorganised"
+data_path = "C:/Python/ZSSI/data/dtw/reorganised"
 all_means = pd.DataFrame()
 breaths = os.listdir(data_path)
 for breath in breaths:
@@ -18,5 +18,5 @@ for breath in breaths:
         mean_series = df.mean()
         all_means[f"{breath}_{method}"] = mean_series
 
-all_means.to_csv(f"C:/Python/ZSSI/data2/dtw/summary/{metric}.csv", sep=';')
+all_means.to_csv(f"C:/Python/ZSSI/data/dtw/summary/{metric}.csv", sep=';')
 print(all_means)

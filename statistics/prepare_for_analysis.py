@@ -38,7 +38,7 @@ for method in methods:
 
 # all-in-one
 breaths = "B6", "B10", "B15", "BAS"
-base_dir = "C:/Python/ZSSI/data2/dtw/dtw"
+base_dir = "C:/Python/ZSSI/data/dtw/dtw"
 methods = os.listdir(base_dir)
 b6_c1, b10_c1, b15_c1, bas_c1 = pd.Series(), pd.Series(), pd.Series(), pd.Series()
 b6_c2, b10_c2, b15_c2, bas_c2 = pd.Series(), pd.Series(), pd.Series(), pd.Series()
@@ -80,5 +80,5 @@ for method in methods:
         bas_l: bas[:min_size]
     }
     df = pd.DataFrame(data)
-    output_path = f"C:/Python/ZSSI/data2/statistics/all-in-one/{method}.csv"
+    output_path = f"C:/Python/ZSSI/data/statistics/all-in-one/{method}.csv"
     df.to_csv(output_path, sep=';', index=False)

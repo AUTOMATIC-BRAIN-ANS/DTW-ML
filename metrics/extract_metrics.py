@@ -135,8 +135,7 @@ class FromSignal:
         """
         Method to plot a specific window from a signal with marked metrics.
         """
-        os.makedirs("plots/metrics", exist_ok=True)
-        output_path = os.path.join("plots/metrics", f"{file}.pdf")
+        output_path = os.path.join("C:/Python/ZSSI/plots/metrics", f"{file}.pdf")
         signal_type = self.signal_type
 
         use_latex()
@@ -145,8 +144,10 @@ class FromSignal:
             raise ValueError(f"The signal contains {len(wd) - 2} windows!")
 
         i = wd_number
-        start, end = wd[i] - 3, wd[i + 1] + 3  # + 103 if abp
+        start, end = wd[i] - 3, wd[i + 1] + 103  # + 103 if abp
         wd_datetime, wd_signal = self.datetime[start:end], self.signal[start:end]
+
+        sft = 0.7
 
         plt.figure(figsize=(10, 6))
         plt.grid(True, zorder=0)
@@ -155,22 +156,31 @@ class FromSignal:
         dn_locs, dn = self.find_dn()
         dpp_locs, dpp = self.find_dpp()
         spo_locs, spo = self.find_spo()
-        plt.scatter(spp_locs[i], spp[i] + 1, label="SPP", color="green", marker="v", s=80, zorder=2)
-        plt.scatter(dn_locs[i], dn[i] + 1, label="DN", color="red", marker="v", s=80, zorder=2)
-        plt.scatter(dpp_locs[i], dpp[i] + 1, label="DPP", color="orange", marker="v", s=80, zorder=2)
-        plt.scatter(spo_locs[i], spo[i] + 1, label="SPO", color="purple", marker="v", s=80, zorder=2)
-        plt.scatter(spo_locs[i + 1], spo[i + 1] + 1, label="DPE", color="brown", marker="v", s=80, zorder=2)
+        plt.scatter(spp_locs[i], spp[i] + sft, label="SPP", color="green", marker="v", s=80, zorder=2)
+        plt.scatter(dn_locs[i], dn[i] + sft, label="DN", color="red", marker="v", s=80, zorder=2)
+        plt.scatter(dpp_locs[i], dpp[i] + sft, label="DPP", color="orange", marker="v", s=80, zorder=2)
+        plt.scatter(spo_locs[i], spo[i] + sft, label="SPO", color="purple", marker="v", s=80, zorder=2)
+        plt.scatter(spo_locs[i + 1], spo[i + 1] + sft, label="DPE", color="brown", marker="v", s=80, zorder=2)
         if signal_type.lower() == "cbfv":
+            plt.vlines(x=spp_locs[i], ymin=48.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
+            plt.vlines(x=spp_locs[i + 1], ymin=48.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
+            plt.scatter(spp_locs[i] + 2.5, 50, color="darkolivegreen", marker="<", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1] - 2.5, 50, color="darkolivegreen", marker=">", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
+            plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
+            plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
+            plt.plot([spp_locs[i] - 2.5, spp_locs[i + 1] + 2.5], [50, 50], color="darkolivegreen", linewidth=1.5,
+                     label="Odstęp RR", zorder=2)
             plt.ylabel("CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
         else:
-            plt.vlines(x=spp_locs[i], ymin=118.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
-            plt.vlines(x=spp_locs[i + 1], ymin=118.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
-            plt.scatter(spp_locs[i] + 2.5, 120, color="darkolivegreen", marker="<", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1] - 2.5, 120, color="darkolivegreen", marker=">", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1], spp[i + 1] + 1, color="green", marker="v", s=80, zorder=2)
-            plt.scatter(dn_locs[i + 1], dn[i + 1] + 1, color="red", marker="v", s=80, zorder=2)
-            plt.scatter(dpp_locs[i + 1], dpp[i + 1] + 1, color="orange", marker="v", s=80, zorder=2)
-            plt.plot([spp_locs[i]-2.5, spp_locs[i + 1]+2.5], [120, 120], color="darkolivegreen", linewidth=1.5,
+            plt.vlines(x=spp_locs[i], ymin=98.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
+            plt.vlines(x=spp_locs[i + 1], ymin=98.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
+            plt.scatter(spp_locs[i] + 2.5, 100, color="darkolivegreen", marker="<", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1] - 2.5, 100, color="darkolivegreen", marker=">", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
+            plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
+            plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
+            plt.plot([spp_locs[i]-2.5, spp_locs[i + 1]+2.5], [100, 100], color="darkolivegreen", linewidth=1.5,
                      label="Odstęp RR", zorder=2)
             plt.ylabel("ABP [mmHg]", fontsize=12)
         plt.title(f"Metryki {signal_type.upper()}", fontsize=16)
@@ -182,34 +192,9 @@ class FromSignal:
         plt.show()
         plt.close()
 
-    def cbfv_metrics(self):
+    def get_metrics(self):
         """
-        Method to export CBFV metrics.
-        :return: data -- metrics to save in a CSV file.
-        """
-        _, spo = self.find_spo()
-        _, spp = self.find_spp()
-        _, dn = self.find_dn()
-        _, dpp = self.find_dpp()
-        datetime, col1, col2, col3, col4 = "DateTime", "CBFV_SPO", "CBFV_SPP", "CBFV_DN", "CBFV_DPP"
-        min_len = min(len(spo), len(spp), len(dn), len(dpp))
-        spo = spo[:min_len]
-        spp = spp[:min_len]
-        dn = dn[:min_len]
-        dpp = dpp[:min_len]
-        datetime_values = np.linspace(0, min_len, min_len)
-        data = {
-            datetime: datetime_values,
-            col1: spo,
-            col2: spp,
-            col3: dn,
-            col4: dpp
-        }
-        return data
-
-    def abp_metrics(self):
-        """
-        Method to export ABP metrics.
+        Method to export metrics from a signal.
         :return: data -- metrics to save in a CSV file.
         """
         _, spo = self.find_spo()
@@ -217,7 +202,10 @@ class FromSignal:
         _, dn = self.find_dn()
         _, dpp = self.find_dpp()
         rr = self.find_rr()
-        datetime, col1, col2, col3, col4, col5 = "DateTime", "ABP_SPO", "ABP_SPP", "ABP_DN", "ABP_DPP", "ABP_RR"
+        if self.signal_type.lower() == "abp":
+            datetime, col1, col2, col3, col4, col5 = "DateTime", "ABP_SPO", "ABP_SPP", "ABP_DN", "ABP_DPP", "ABP_RR"
+        else:
+            datetime, col1, col2, col3, col4, col5 = "DateTime", "CBFV_SPO", "CBFV_SPP", "CBFV_DN", "CBFV_DPP", "CBFV_RR"
         min_len = min(len(spo), len(spp), len(dn), len(dpp), len(rr))
         spo = spo[:min_len]
         spp = spp[:min_len]
@@ -239,12 +227,11 @@ class FromSignal:
         """
         Method to export metrics to a CSV file.
         """
-        output_dir = os.path.join("data2/metrics", directory)
+        output_dir = os.path.join("C:/Python/ZSSI/data/metrics", directory)
         os.makedirs(output_dir, exist_ok=True)
-        if self.signal_type.lower() == 'cbfv':
-            data = self.cbfv_metrics()
-        else:
-            data = self.abp_metrics()
+        data = self.get_metrics()
         df = pd.DataFrame(data)
-        df.to_csv(f"C:/Python/ZSSI/data2/metrics/{directory}/{filename}", sep=';', index=False)
+        output_path = f"C:/Python/ZSSI/data/metrics/{directory}"
+        os.makedirs(output_path, exist_ok=True)
+        df.to_csv(f"{output_path}/{filename}", sep=';', index=False)
         print("Data was exported!")

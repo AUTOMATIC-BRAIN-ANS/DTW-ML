@@ -3,10 +3,10 @@
 """
 
 import pandas as pd
-from project.execution.preprocessing import remove_freq
+from project.utils.filter_signals import remove_freq
 import os
 
-base_dir = "/data2/preprocessed"
+base_dir = "C:/Python/ZSSI/data/preprocessed"
 for directory in os.listdir(base_dir):
     dir_path = os.path.join(base_dir, directory)
     if directory == "B6":
@@ -33,5 +33,5 @@ for directory in os.listdir(base_dir):
         }
         df = pd.DataFrame(data)
         file = os.path.splitext(file)[0]
-        df.to_csv(f"C:/Python/ZSSI/data2/filtered/{directory}/{file}_F.csv", sep=';', index=False)
+        df.to_csv(f"C:/Python/ZSSI/data/filtered/{directory}/{file}_F.csv", sep=';', index=False)
         print("Data was exported!")

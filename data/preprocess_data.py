@@ -22,7 +22,7 @@ class PreprocessData:
         :raise IsADirectoryError: if a path exists but leads to, for example, directory instead of a file.
         :raise ValueError: if a file is not a CSV file.
         """
-        filepath = f"C:/Python/ZSSI/data2/dtw/raw/{filename}.csv"
+        filepath = f"C:/Python/ZSSI/data/extracted/{filename}.csv"
         check_path(filepath)
         self.filename = filename
         data = pd.read_csv(filepath, delimiter=';')
@@ -259,5 +259,4 @@ class PreprocessData:
             col2: s2
         }
         df = pd.DataFrame(data)
-        df.to_csv(f"C:/Python/ZSSI/data2/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
-        print("Data was exported!")
+        df.to_csv(f"C:/Python/ZSSI/data/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
