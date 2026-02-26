@@ -9,8 +9,8 @@ import os
 
 # DATA PREPROCESSING
 """print("=== Starting preprocessing ===")
-base_dir = "C:/Python/ZSSI/data/extracted"
-error_dir = "C:/Python/ZSSI/data/spoiled"
+base_dir = "C:/Python/ZSSI/data_v2/extracted"
+error_dir = "C:/Python/ZSSI/data_v2/spoiled"
 for directory in os.listdir(base_dir):
     dir_path = os.path.join(base_dir, directory)
     print(f"\n=== Directory: {directory} ===")

@@ -10,7 +10,7 @@ from project.common import use_latex
 use_latex()
 
 # BEFORE PREPROCESSING
-"""data_path = "C:/Python/ZSSI/data2/dtw/raw"
+"""data_path = "C:/Python/ZSSI/data_v2/dtw/raw"
 directories = os.listdir(data_path)
 for directory in directories:
     directory_path = os.path.join(data_path, directory)
@@ -19,7 +19,7 @@ for directory in directories:
         file_path = os.path.join(directory_path, file)
         data = pd.read_csv(file_path, delimiter=';')
         df = pd.DataFrame(data)
-        m = "ABP"
+        m = "CBFV"
         datetime, spo, spp, dn, dpp, rr = (df["DateTime"], df[f"{m}_SPO"], df[f"{m}_SPP"],
                                            df[f"{m}_DN"], df[f"{m}_DPP"], df[f"{m}_RR"])
 
@@ -37,32 +37,32 @@ for directory in directories:
 
         # plot data
         ax1.plot(datetime, spo, color="purple")
-        ax1.set_title("Początek fazy skurczowej")
+        ax1.set_title("Systolic phase onset")
 
         ax2.plot(datetime, spp, color="green")
-        ax2.set_title("Szczyt fazy skurczowej")
+        ax2.set_title("Systolic phase peak")
 
         ax3.plot(datetime, dn, color="red")
-        ax3.set_title("Wcięcie dykrotyczne")
+        ax3.set_title("Dicrotic notch")
 
         ax4.plot(datetime, dpp, color="orange")
-        ax4.set_title("Szczyt fazy rozkurczowej")
+        ax4.set_title("Diastolic phase peak")
 
         ax5.plot(datetime, rr, color="darkolivegreen")
-        ax5.set_title("Odstęp RR")
+        ax5.set_title("RR interval")
 
         for ax in [ax1, ax2, ax3, ax4, ax5]:
             ax.set_xlim(left=datetime[0], right=len(datetime))
-            ax.set_xlabel("Numer okna sygnału [-]")
+            ax.set_xlabel("Window [-]")
             ax.minorticks_on()
             ax.grid(which='major', linestyle='-', linewidth=0.7)
             ax.grid(which='minor', linestyle=':', linewidth=0.5, alpha=0.7)
             if ax != ax5:
-                ax.set_ylabel("Wartość [mmHg]")
+                ax.set_ylabel("Value [mmHg]")  # [$\mathrm{cm \cdot s^{-1}}$]
             else:
-                ax.set_ylabel("Wartość [s]")
+                ax.set_ylabel("Value [s]")
 
-        plt.suptitle(f"Metryki {m}")
+        plt.suptitle(f"{m} metrics")
         plt.tight_layout()
         plt.grid()
 
@@ -75,7 +75,7 @@ for directory in directories:
         plt.close()"""
 
 # AFTER PREPROCESSING
-data_path = "C:/Python/ZSSI/data2/dtw/preprocessed"
+data_path = "C:/Python/ZSSI/data_v2/dtw/preprocessed"
 directories = os.listdir(data_path)
 for directory in directories:
     directory_path = os.path.join(data_path, directory)
@@ -99,26 +99,26 @@ for directory in directories:
 
         # plot data
         ax1.plot(datetime, spo, color="purple")
-        ax1.set_title("Początek fazy skurczowej")
+        ax1.set_title("Systolic phase onset")
 
         ax2.plot(datetime, spp, color="green")
-        ax2.set_title("Szczyt fazy skurczowej")
+        ax2.set_title("Systolic phase peak")
 
         ax5.plot(datetime, rr, color="darkolivegreen")
-        ax5.set_title("Odstęp RR")
+        ax5.set_title("RR interval")
 
         for ax in [ax1, ax2, ax5]:
             ax.set_xlim(left=datetime[0], right=len(datetime))
-            ax.set_xlabel("Numer okna sygnału [-]")
+            ax.set_xlabel("Window [-]")
             ax.minorticks_on()
             ax.grid(which='major', linestyle='-', linewidth=0.7)
             ax.grid(which='minor', linestyle=':', linewidth=0.5, alpha=0.7)
             if ax != ax5:
-                ax.set_ylabel("Wartość [mmHg]")
+                ax.set_ylabel("Value [$\mathrm{cm \cdot s^{-1}}$]")  # [$\mathrm{cm \cdot s^{-1}}$]
             else:
-                ax.set_ylabel("Wartość [s]")
+                ax.set_ylabel("Value [s]")
 
-        plt.suptitle(f"Metryki {m}")
+        plt.suptitle(f"{m} metrics")
         plt.tight_layout()
         plt.grid()
 
@@ -127,5 +127,5 @@ for directory in directories:
         file = os.path.splitext(file)[0]
         plt.savefig(f"{output_path}/{file}.pdf", format="pdf")
 
-        plt.show()
+        # plt.show()
         plt.close()
