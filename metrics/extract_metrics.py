@@ -170,7 +170,7 @@ class FromSignal:
             plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
             plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
             plt.plot([spp_locs[i] - 2.5, spp_locs[i + 1] + 2.5], [50, 50], color="darkolivegreen", linewidth=1.5,
-                     label="Odstęp RR", zorder=2)
+                     label="RR interval", zorder=2)
             plt.ylabel("CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
         else:
             plt.vlines(x=spp_locs[i], ymin=98.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
@@ -181,10 +181,10 @@ class FromSignal:
             plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
             plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
             plt.plot([spp_locs[i]-2.5, spp_locs[i + 1]+2.5], [100, 100], color="darkolivegreen", linewidth=1.5,
-                     label="Odstęp RR", zorder=2)
+                     label="RR interval", zorder=2)
             plt.ylabel("ABP [mmHg]", fontsize=12)
-        plt.title(f"Metryki {signal_type.upper()}", fontsize=16)
-        plt.xlabel("Czas [s]", fontsize=12)
+        plt.title(f"{signal_type.upper()} metrics", fontsize=16)
+        plt.xlabel("Time [s]", fontsize=12)
         plt.xlim(left=wd_datetime[0], right=wd_datetime[-1])
         plt.legend()
         plt.tight_layout()

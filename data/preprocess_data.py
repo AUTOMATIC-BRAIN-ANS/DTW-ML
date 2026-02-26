@@ -251,7 +251,7 @@ class PreprocessData:
         """
         print(f"File: {self.filename} being processed...")
         datetime, col1, col2 = "DateTime", self.first_column, self.second_column
-        s1, s2 = self.get_first_signal_normalized(), self.get_second_signal_normalized()
+        s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
         datetime_values = np.linspace(0, len(s1), len(s1))
         data = {
             datetime: datetime_values,

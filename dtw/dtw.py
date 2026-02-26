@@ -349,10 +349,10 @@ class DTW:
         plt.colorbar(c, ax=ax)
         x_path, y_path = zip(*self.__path[:-1])
         ax.plot(y_path, x_path, color="#003A7D", linewidth=1.5)
-        ax.set_title("Macierz kosztów")
+        ax.set_title("Cost matrix")
         ax.set_xlabel(f"{x_signal}", labelpad=label_pad)
         ax.set_ylabel(f"{y_signal}", labelpad=label_pad)
-        ax.legend(['Ścieżka dopasowania'])
+        ax.legend(['Alignment path'])
         if filename is not None:
             plt.savefig(f"{filename}.pdf", format='pdf')
 

@@ -10,7 +10,7 @@ import numpy as np
 
 use_latex()
 
-path = "C:/Python/ZSSI/data2/dtw/dtw"
+path = "C:/Python/ZSSI/data_v2/dtw/dtw"
 breaths = os.listdir(path)
 for breath in breaths:
     methods = os.listdir(os.path.join(path, breath))
