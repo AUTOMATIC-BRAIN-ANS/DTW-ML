@@ -9,8 +9,8 @@ import os
 
 # DATA PREPROCESSING
 """print("=== Starting preprocessing ===")
-base_dir = "C:/Python/ZSSI/data_v2/extracted"
-error_dir = "C:/Python/ZSSI/data_v2/spoiled"
+base_dir = "C:/Python/ZSSI/data/extracted"
+error_dir = "C:/Python/ZSSI/data/spoiled"
 for directory in os.listdir(base_dir):
     dir_path = os.path.join(base_dir, directory)
     print(f"\n=== Directory: {directory} ===")
@@ -19,7 +19,8 @@ for directory in os.listdir(base_dir):
         filename = os.path.join(directory, file)
         filename_without_extension = os.path.splitext(filename)[0]
         try:
-            prep = PreprocessData(filename_without_extension, first_column='ABP', second_column='CBFV')
+            prep = PreprocessData(filename_without_extension, first_column='ABP', second_column='CBFV',
+                                  third_column='BPM')
             prep.export_preprocessed_data()
             print("✔ Success")
         except Exception as e:

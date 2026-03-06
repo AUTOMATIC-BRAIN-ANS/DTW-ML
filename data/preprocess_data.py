@@ -12,7 +12,7 @@ import pandas as pd
 
 
 class PreprocessData:
-    def __init__(self, filename, first_column, second_column):
+    def __init__(self, filename, first_column, second_column, third_column):
         """
         Method to initialize params of a class.
         :param filename: name of a file.
@@ -29,10 +29,11 @@ class PreprocessData:
         df = pd.DataFrame(data)
         check_column_existence(df=df, col=first_column)
         check_column_existence(df=df, col=second_column)
-        self.first_column, self.second_column = first_column, second_column
-        s1, s2 = self.__assign_signals(df=df, first_column=first_column,
-                                       second_column=second_column)
-        self.first_signal, self.second_signal = s1, s2
+        check_column_existence(df=df, col=third_column)
+        self.first_column, self.second_column, self.third_column = first_column, second_column, third_column
+        s1, s2, s3 = self.__assign_signals(df=df, first_column=first_column, second_column=second_column,
+                                           third_column=third_column)
+        self.first_signal, self.second_signal, self.third_signal = s1, s2, s3
 
     def get_first_signal(self):
         """
@@ -48,8 +49,15 @@ class PreprocessData:
         """
         return self.second_signal
 
+    def get_third_signal(self):
+        """
+        Getter to get a second, initialized signal.
+        :return: second signal.
+        """
+        return self.third_signal
+
     @staticmethod
-    def __assign_signals(df, first_column, second_column):
+    def __assign_signals(df, first_column, second_column, third_column):
         """
         Method to assign signals to variables based on the specified column names, involving looking for artefacts in
         the CBFV signal.
@@ -64,7 +72,8 @@ class PreprocessData:
             s1, s2 = filter_abp(df, col_abp='ABP'), df[second_column]
         else:
             s1, s2 = df[first_column], df[second_column]
-        return s1, s2
+        s3 = df[third_column]
+        return s1, s2, s3
 
     def remove_outliers(self, threshold=1.5):
         """
@@ -250,13 +259,15 @@ class PreprocessData:
         :return: None.
         """
         print(f"File: {self.filename} being processed...")
-        datetime, col1, col2 = "DateTime", self.first_column, self.second_column
-        s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
+        datetime, col1, col2, col3 = "DateTime", self.first_column, self.second_column, self.third_column
+        s1, s2, s3 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed(), self.get_third_signal()
+        min_len = min(len(s1), len(s2), len(s3))
         datetime_values = np.linspace(0, len(s1), len(s1))
         data = {
-            datetime: datetime_values,
-            col1: s1,
-            col2: s2
+            datetime: datetime_values[:min_len],
+            col1: s1[:min_len],
+            col2: s2[:min_len],
+            col3: s3[:min_len]
         }
         df = pd.DataFrame(data)
         df.to_csv(f"C:/Python/ZSSI/data/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
