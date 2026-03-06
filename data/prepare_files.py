@@ -14,7 +14,8 @@ FILE_FORMATS = [
             "datetime": "DateTime",
             "abp": "abp_cnap[mmHg]",
             "fv_l": "fvl",
-            "fv_r": "fvr"
+            "fv_r": "fvr",
+            "bpm":  "rr[rpm]"
         }
     },
     {
@@ -24,7 +25,8 @@ FILE_FORMATS = [
             "datetime": "DateTime",
             "abp": "abp_finger[abp_finger]",
             "fv_l": "fv_l[fv_l]",
-            "fv_r": "fv_r[fv_r]"
+            "fv_r": "fv_r[fv_r]",
+            "bpm": "rr[rr]"
         }
     },
     {
@@ -34,7 +36,8 @@ FILE_FORMATS = [
             "datetime": "DateTime",
             "abp": "abp_finger[mm_Hg]",
             "fv_l": "fv_l[]",
-            "fv_r": "fv_r[]"
+            "fv_r": "fv_r[]",
+            "bpm": "rr[bpm]"
         }
     }
 ]
@@ -51,7 +54,8 @@ def load_signals(file_path):
             datetime = df[cols["datetime"]]
             abp = df[cols["abp"]]
             cbfv = calculate_cbfv(df, cols["fv_l"], cols["fv_r"])
-            return datetime, abp, cbfv
+            bpm = df[cols["bpm"]]
+            return datetime, abp, cbfv, bpm
         except Exception:
             continue
     raise ValueError(f"No matching format for file: {file_path}")
@@ -73,11 +77,12 @@ def extract_signals():
             file_path = os.path.join(directory_path, file)
             print(f"-> Processing: {file}")
             try:
-                datetime, abp, cbfv = load_signals(file_path)
+                datetime, abp, cbfv, bpm = load_signals(file_path)
                 new_df = pd.DataFrame({
                     "DateTime": datetime,
                     "ABP": abp,
-                    "CBFV": cbfv
+                    "CBFV": cbfv,
+                    "BPM": bpm
                 })
                 out_file = os.path.join(out_dir, f"V{i}_{directory}.csv")
                 new_df.to_csv(out_file, sep=";", index=False)
