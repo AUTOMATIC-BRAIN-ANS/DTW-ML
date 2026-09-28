@@ -4,10 +4,11 @@
 
 import numpy as np
 import pandas as pd
+from scipy.signal import savgol_filter
+
+from project.common import values_in_order
 from project.utils.nan_handler import NaNHandler as NaNH
 from project.utils.normalization import NormalizeData
-from project.common import values_in_order
-from scipy.signal import savgol_filter
 
 
 class PreprocessingUtils:

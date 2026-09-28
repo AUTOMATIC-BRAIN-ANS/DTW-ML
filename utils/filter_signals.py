@@ -2,8 +2,8 @@
 @author: Radoslaw Plawecki
 """
 
-from scipy.fft import fft, fftfreq, ifft
 import numpy as np
+from scipy.fft import fft, fftfreq, ifft
 
 
 def remove_freq(s, T, breaths, thresh=0.75, margin=0.01):

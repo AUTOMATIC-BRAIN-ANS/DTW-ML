@@ -2,10 +2,12 @@
 @author: Radoslaw Plawecki
 """
 
-import pandas as pd
-import numpy as np
-from project.utils.filter_signals import remove_freq
 import os
+
+import numpy as np
+import pandas as pd
+
+from project.utils.filter_signals import remove_freq
 
 base_dir = "C:/Python/ZSSI/data/preprocessed"
 for directory in os.listdir(base_dir):

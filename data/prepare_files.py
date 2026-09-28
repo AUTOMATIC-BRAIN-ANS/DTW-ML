@@ -2,9 +2,11 @@
 @author: Radoslaw Plawecki
 """
 
-import pandas as pd
-from project.common import calculate_cbfv
 import os
+
+import pandas as pd
+
+from project.common import calculate_cbfv
 
 FILE_FORMATS = [
     {

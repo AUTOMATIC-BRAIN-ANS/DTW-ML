@@ -3,10 +3,11 @@
 """
 import os
 
-from project.common import use_latex
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from project.common import use_latex
 
 use_latex()
 

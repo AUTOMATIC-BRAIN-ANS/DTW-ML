@@ -8,9 +8,10 @@ Access: 29.B10.2024.
 https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb. Access: 29.B10.2024.
 """
 
-from project.common import use_latex
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+from project.common import use_latex
 
 
 class DTW:

@@ -2,9 +2,11 @@
 @author: Radosław Plawecki
 """
 
-from project.dtw.dtw import DTW
-import pandas as pd
 import os
+
+import pandas as pd
+
+from project.dtw.dtw import DTW
 
 """data_path = "C:/Python/ZSSI/data2/dtw/preprocessed"
 files = os.listdir(data_path)

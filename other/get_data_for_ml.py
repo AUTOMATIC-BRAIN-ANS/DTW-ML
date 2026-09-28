@@ -2,8 +2,9 @@
 @author: Radoslaw Plawecki
 """
 
-import pandas as pd
 import os
+
+import pandas as pd
 
 method = 'td-method'
 data_path = f"C:/Python/ZSSI/data/dtw/reorganised/{method}"

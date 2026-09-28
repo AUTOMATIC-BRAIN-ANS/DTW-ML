@@ -2,10 +2,8 @@
 @author: Radosław Pławecki
 """
 
-import pandas as pd
-import numpy as np
-import os
 
+import pandas as pd
 
 # MERGE DATA
 """# input_path = "C:/Python/ZSSI/data/extracted"  # for signals

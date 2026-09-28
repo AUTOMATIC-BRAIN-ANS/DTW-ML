@@ -3,6 +3,7 @@
 """
 
 import numpy as np
+
 from project.utils.generalized_logistic import GeneralizedLogistic
 
 

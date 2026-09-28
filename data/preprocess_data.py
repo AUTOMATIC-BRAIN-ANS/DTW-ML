@@ -4,11 +4,12 @@ Sources:
 https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-interquartile-range-iqr-b55b9726363e
 """
 
-from project.common import use_latex, filter_abp, check_column_existence, check_path
-from project.utils.preprocessing_utils import PreprocessingUtils as prepUtils
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+
+from project.common import check_column_existence, check_path, filter_abp, use_latex
+from project.utils.preprocessing_utils import PreprocessingUtils as prepUtils
 
 
 class PreprocessData:

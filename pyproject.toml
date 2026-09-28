@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dtw-ml"
+version = "0.1.0"
+description = "ABP-CBFV analysis under paced breathing."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.2",
+    "pandas>=2.3",
+    "scipy>=1.16",
+    "matplotlib>=3.10",
+    "statsmodels>=0.14",
+    "pingouin>=0.5.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.12",
+]
+
+# The repository root is itself the `project` package (code imports `from project.x import ...`),
+# so map it explicitly; `pip install -e .` then makes `project.*` importable from any directory.
+[tool.setuptools]
+package-dir = { "project" = "." }
+packages = [
+    "project",
+    "project.data",
+    "project.dtw",
+    "project.execution",
+    "project.metrics",
+    "project.other",
+    "project.statistics",
+    "project.utils",
+    "project.visualisation",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# I = import sorting (isort), F401 = unused imports
+select = ["I", "F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["project"]

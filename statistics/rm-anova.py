@@ -2,11 +2,12 @@
 @author: Radosław Pławecki
 """
 
-import pandas as pd
-from statsmodels.stats.anova import AnovaRM
-from scipy.stats import ttest_rel
-from statsmodels.stats.multitest import multipletests
 import itertools
+
+import pandas as pd
+from scipy.stats import ttest_rel
+from statsmodels.stats.anova import AnovaRM
+from statsmodels.stats.multitest import multipletests
 
 metrics = ["SPO", "SPP", "RR"]
 i = 2

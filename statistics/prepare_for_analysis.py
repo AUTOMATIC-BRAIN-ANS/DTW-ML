@@ -2,8 +2,9 @@
 @author: Radosław Pławecki
 """
 
-import pandas as pd
 import os
+
+import pandas as pd
 
 # for every method, get each pair in a different file
 """breaths = "B6", "B10", "B15", "BAS"

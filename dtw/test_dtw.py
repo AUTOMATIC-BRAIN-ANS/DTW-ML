@@ -3,9 +3,11 @@
 """
 
 import unittest
-import numpy as np
-from dtw import DTW
 from unittest.mock import patch
+
+import numpy as np
+
+from dtw import DTW
 
 
 class TestDTW(unittest.TestCase):

@@ -2,9 +2,11 @@
 @author: Radoslaw Plawecki
 """
 
-from project.common import use_latex
 import os
+
 import pandas as pd
+
+from project.common import use_latex
 from project.metrics.extract_metrics import FromSignal
 
 use_latex()

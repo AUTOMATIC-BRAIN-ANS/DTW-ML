@@ -2,9 +2,10 @@
 @author: Radosław Pławecki
 """
 
-from project.utils.preprocessing_utils import PreprocessingUtils as prepUtils
-from project.common import check_path
 import pandas as pd
+
+from project.common import check_path
+from project.utils.preprocessing_utils import PreprocessingUtils as prepUtils
 
 
 class PreprocessMetrics:

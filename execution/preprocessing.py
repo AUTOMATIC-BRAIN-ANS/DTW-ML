@@ -2,10 +2,10 @@
 @author: Radoslaw Plawecki
 """
 
-from project.data.preprocess_data import PreprocessData
-from project.metrics.preprocess_metrics import PreprocessMetrics
-import shutil
 import os
+import shutil
+
+from project.metrics.preprocess_metrics import PreprocessMetrics
 
 # DATA PREPROCESSING
 """print("=== Starting preprocessing ===")

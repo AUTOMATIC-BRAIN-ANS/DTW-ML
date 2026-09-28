@@ -7,7 +7,7 @@ Access: 30.B10.2024.
 """
 
 import numpy as np
-from scipy.optimize import minimize, fminbound
+from scipy.optimize import fminbound, minimize
 
 
 class GeneralizedLogistic:

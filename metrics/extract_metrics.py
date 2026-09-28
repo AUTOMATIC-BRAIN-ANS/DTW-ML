@@ -2,13 +2,15 @@
 @author: Radoslaw Plawecki
 """
 
-from project.common import use_latex
-from detect_troughs import detect_peaks_troughs_optimized
-from scipy.signal import find_peaks
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
-import matplotlib.pyplot as plt
+from detect_troughs import detect_peaks_troughs_optimized
+from scipy.signal import find_peaks
+
+from project.common import use_latex
 
 
 class FromSignal:
