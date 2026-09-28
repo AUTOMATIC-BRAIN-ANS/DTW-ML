@@ -22,7 +22,7 @@ for comb in combs:
         df_long = df.melt(id_vars='subject', var_name='condition', value_name='score')
 
         aov = pg.rm_anova(dv='score', within='condition', subject='subject', data=df_long, detailed=True)
-        print(aov[['Source', 'F', 'p-unc', 'ng2']])  # 'p-GG-corr'
+        print(aov[['Source', 'F', 'p_unc', 'ng2']])  # 'p-GG-corr'
 
         posthoc = pg.pairwise_tests(
             dv='score',
@@ -32,10 +32,10 @@ for comb in combs:
             padjust='bonf'
         )
 
-        print(posthoc[['A', 'B', 'T', 'p-corr']])
+        print(posthoc[['A', 'B', 'T', 'p_corr']])
         output_path = f'C:/Python/ZSSI/data/statistics/{comb_no_ext}'
         os.makedirs(output_path, exist_ok=True)
-        aov[['Source', 'F', 'p-unc', 'ng2']].to_csv(os.path.join(output_path, f'{methods[index]}_anova_results.csv'),
+        aov[['Source', 'F', 'p_unc', 'ng2']].to_csv(os.path.join(output_path, f'{methods[index]}_anova_results.csv'),
                                                     index=False, sep=';')
-        posthoc[['A', 'B', 'T', 'p-corr']].to_csv(os.path.join(output_path, f'{methods[index]}_posthoc_results.csv'),
+        posthoc[['A', 'B', 'T', 'p_corr']].to_csv(os.path.join(output_path, f'{methods[index]}_posthoc_results.csv'),
                                                   index=False, sep=';')

@@ -74,12 +74,12 @@ for method in methods:
     sizes = [b6.size, b15.size, b10.size, bas.size]
     min_size = min(sizes)
     b6_l, b10_l, b15_l, bas_l = breaths[:4]
-    data = {
+    aligned = {
         b6_l: b6[:min_size],
         b10_l: b10[:min_size],
         b15_l: b15[:min_size],
         bas_l: bas[:min_size]
     }
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(aligned)
     output_path = f"C:/Python/ZSSI/data/statistics/all-in-one/{method}.csv"
     df.to_csv(output_path, sep=';', index=False)

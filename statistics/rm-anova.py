@@ -51,7 +51,7 @@ abp["Breath"] = abp["Breath"].str.replace("_ABP", "")
 
 anova_abp = AnovaRM(abp, "ABP", "Subject", within=["Breath"]).fit()
 
-p_abp = anova_abp.anova_table["Pr > F"][0]
+p_abp = anova_abp.anova_table["Pr > F"].iloc[0]
 print("ABP p-value:", p_abp)
 
 if p_abp < 0.05:
@@ -72,7 +72,7 @@ cbfv["Breath"] = cbfv["Breath"].str.replace("_CBFV", "")
 
 anova_cbfv = AnovaRM(cbfv, "CBFV", "Subject", within=["Breath"]).fit()
 
-p_cbfv = anova_cbfv.anova_table["Pr > F"][0]
+p_cbfv = anova_cbfv.anova_table["Pr > F"].iloc[0]
 print("CBFV p-value:", p_cbfv)
 
 if p_cbfv < 0.05:

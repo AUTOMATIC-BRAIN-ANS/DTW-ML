@@ -28,12 +28,12 @@ for directory in os.listdir(base_dir):
             breaths = np.mean(bpm)
         abp = remove_freq(abp, T=200, breaths=breaths)
         cbfv = remove_freq(cbfv, T=200, breaths=breaths)
-        data = {
+        filtered = {
             "DateTime": datetime,
             "ABP": abp,
             "CBFV": cbfv
         }
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(filtered)
         file = os.path.splitext(file)[0]
         df.to_csv(f"C:/Python/ZSSI/data/filtered/{directory}/{file}_F.csv", sep=';', index=False)
         print("Data was exported!")

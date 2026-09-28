@@ -1,0 +1,20 @@
+# Weekly update PRs for Python dependencies (pyproject.toml) and GitHub Actions versions.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    # raise the `>=` lower bounds in pyproject.toml instead of only widening ranges
+    versioning-strategy: increase
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

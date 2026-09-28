@@ -7,7 +7,6 @@ import os
 import pandas as pd
 
 cols = ["V" + str(i) for i in range(1, 100)]
-output = []
 metric = "ABP_RR-CBFV_RR"
 
 data_path = "C:/Python/ZSSI/data/dtw/dtw"

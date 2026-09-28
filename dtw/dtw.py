@@ -15,9 +15,9 @@ from project.common import use_latex
 
 
 class DTW:
-    __cost_matrix = []
+    __cost_matrix: list | np.ndarray = []
     __matches, __insertions, __deletions = 0, 0, 0
-    __path = []
+    __path: list[tuple[int, int]] = []
 
     def __init__(self, x, y, var=None):
         """

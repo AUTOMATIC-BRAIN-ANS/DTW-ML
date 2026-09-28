@@ -1,25 +1,28 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dtw-ml"
 version = "0.1.0"
 description = "ABP-CBFV analysis under paced breathing."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.2",
-    "pandas>=2.3",
-    "scipy>=1.16",
-    "matplotlib>=3.10",
-    "statsmodels>=0.14",
-    "pingouin>=0.5.5",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "scipy>=1.18.1",
+    "matplotlib>=3.11.2",
+    "statsmodels>=0.15.0",
+    "pingouin>=0.7.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8",
-    "ruff>=0.12",
+    "pytest>=9.1.1",
+    "ruff>=0.16.9",
+    "mypy>=2.3.1",
+    "pandas-stubs>=3.0.5.260914",
+    "scipy-stubs>=1.18.1.1",
 ]
 
 # The repository root is itself the `project` package (code imports `from project.x import ...`),
@@ -38,9 +41,16 @@ packages = [
     "project.visualisation",
 ]
 
+[tool.mypy]
+python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = ["statsmodels.*", "pingouin.*", "detect_troughs"]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 # I = import sorting (isort), F401 = unused imports

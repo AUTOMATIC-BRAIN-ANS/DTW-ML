@@ -106,7 +106,7 @@ for breath in breaths:
              col6, col7, col8, col9, col10) = ("Window", "ABP_SPO-CBFV_SPO", "ABP_SPP-CBFV_SPP", "ABP_SPO-CBFV_SPP",
                                                "ABP_SPP-CBFV_SPO", "ABP_RR-CBFV_SPO", "ABP_RR-CBFV_SPP", "ABP_SPO-CBFV_RR",
                                                "ABP_SPP-CBFV_RR", "ABP_RR-CBFV_RR")
-            data = {
+            costs = {
                 col1: windows,
                 col2: vals[0],
                 col3: vals[1],
@@ -120,7 +120,7 @@ for breath in breaths:
             }
             file_no_extension = os.path.splitext(file)[0]
 
-            df = pd.DataFrame(data)
+            df = pd.DataFrame(costs)
             df.to_csv(f"C:/Python/ZSSI/data/dtw/dtw/{method}/{breath}/{file_no_extension}_DTW.csv", sep=';', index=False)
             print("✔ Success")
         except Exception as e:

@@ -19,7 +19,8 @@ for directory in directories:
         data = pd.read_csv(file_path, delimiter=';')
         df = pd.DataFrame(data)
         merged_col = df.iloc[0:].stack().reset_index(drop=True)
-        merged_df = merged_col.to_frame(name="costs")
+        # stack() on single-level columns always returns a Series; pandas-stubs also allows DataFrame
+        merged_df = merged_col.to_frame(name="costs")  # type: ignore[operator]
         output_path = f"C:/Python/ZSSI/data/ml-data/{method}/{directory}/{file}.csv"
         merged_df.to_csv(output_path, sep=';', index=False)
         print("Done!")

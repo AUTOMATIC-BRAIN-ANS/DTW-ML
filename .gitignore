@@ -4,3 +4,7 @@ __pycache__/
 
 # pytest cache
 .pytest_cache/
+
+# packaging build metadata (pip install -e .)
+*.egg-info/
+build/
