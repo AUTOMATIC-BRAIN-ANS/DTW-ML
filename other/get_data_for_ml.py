@@ -5,8 +5,8 @@
 import pandas as pd
 import os
 
-method = 'd-method'
-data_path = f"C:/Python/ZSSI/data_v2/dtw/reorganised/{method}"
+method = 'td-method'
+data_path = f"C:/Python/ZSSI/data/dtw/reorganised/{method}"
 directories = os.listdir(data_path)
 for directory in directories:
     print(f"=== {directory} ===")
@@ -19,6 +19,6 @@ for directory in directories:
         df = pd.DataFrame(data)
         merged_col = df.iloc[0:].stack().reset_index(drop=True)
         merged_df = merged_col.to_frame(name="costs")
-        output_path = f"C:/Python/ZSSI/data_v2/ml-data/{method}/{directory}/{file}.csv"
+        output_path = f"C:/Python/ZSSI/data/ml-data/{method}/{directory}/{file}.csv"
         merged_df.to_csv(output_path, sep=';', index=False)
         print("Done!")

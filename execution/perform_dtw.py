@@ -84,7 +84,7 @@ for breath in breaths:
         try:
             data = pd.read_csv(os.path.join(data_path, breath, file), delimiter=';')
             df = pd.DataFrame(data)
-            method = 'd-method'
+            method = 'td-method'
             (abp_spo, abp_spp, abp_rr,
              cbfv_spo, cbfv_spp, cbfv_rr) = (df["ABP_SPO"], df["ABP_SPP"], df["ABP_RR"],
                                              df["CBFV_SPO"], df["CBFV_SPP"], df["CBFV_RR"])
@@ -119,7 +119,7 @@ for breath in breaths:
             file_no_extension = os.path.splitext(file)[0]
 
             df = pd.DataFrame(data)
-            # df.to_csv(f"C:/Python/ZSSI/data/dtw/dtw/{method}/{breath}/{file_no_extension}_DTW.csv", sep=';', index=False)
+            df.to_csv(f"C:/Python/ZSSI/data/dtw/dtw/{method}/{breath}/{file_no_extension}_DTW.csv", sep=';', index=False)
             print("✔ Success")
         except Exception as e:
             print(f"✖ Failed ({e})")

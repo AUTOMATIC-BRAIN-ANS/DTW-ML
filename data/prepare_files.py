@@ -85,7 +85,8 @@ def extract_signals():
                     "BPM": bpm
                 })
                 out_file = os.path.join(out_dir, f"V{i}_{directory}.csv")
-                new_df.to_csv(out_file, sep=";", index=False)
+                print(f"{file}: V{i}")
+                # new_df.to_csv(out_file, sep=";", index=False)
                 print("✔ Success")
             except Exception as e:
                 print(f"✖ Failed ({e})")

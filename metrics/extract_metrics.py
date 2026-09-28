@@ -151,16 +151,16 @@ class FromSignal:
 
         plt.figure(figsize=(10, 6))
         plt.grid(True, zorder=0)
-        plt.plot(wd_datetime, wd_signal, label=signal_type.upper(), linewidth=2, zorder=3)
+        plt.plot(wd_datetime, wd_signal, label=f"_{signal_type.upper()}", linewidth=2, zorder=3)
         spp_locs, spp = self.find_spp()
         dn_locs, dn = self.find_dn()
         dpp_locs, dpp = self.find_dpp()
         spo_locs, spo = self.find_spo()
         plt.scatter(spp_locs[i], spp[i] + sft, label="SPP", color="green", marker="v", s=80, zorder=2)
-        plt.scatter(dn_locs[i], dn[i] + sft, label="DN", color="red", marker="v", s=80, zorder=2)
-        plt.scatter(dpp_locs[i], dpp[i] + sft, label="DPP", color="orange", marker="v", s=80, zorder=2)
+        # plt.scatter(dn_locs[i], dn[i] + sft, label="DN", color="red", marker="v", s=80, zorder=2)
+        # plt.scatter(dpp_locs[i], dpp[i] + sft, label="DPP", color="orange", marker="v", s=80, zorder=2)
         plt.scatter(spo_locs[i], spo[i] + sft, label="SPO", color="purple", marker="v", s=80, zorder=2)
-        plt.scatter(spo_locs[i + 1], spo[i + 1] + sft, label="DPE", color="brown", marker="v", s=80, zorder=2)
+        # plt.scatter(spo_locs[i + 1], spo[i + 1] + sft, label="DPE", color="brown", marker="v", s=80, zorder=2)
         if signal_type.lower() == "cbfv":
             plt.vlines(x=spp_locs[i], ymin=48.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
             plt.vlines(x=spp_locs[i + 1], ymin=48.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
@@ -178,8 +178,8 @@ class FromSignal:
             plt.scatter(spp_locs[i] + 2.5, 100, color="darkolivegreen", marker="<", s=80, zorder=2)
             plt.scatter(spp_locs[i + 1] - 2.5, 100, color="darkolivegreen", marker=">", s=80, zorder=2)
             plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
-            plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
-            plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
+            # plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
+            # plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
             plt.plot([spp_locs[i]-2.5, spp_locs[i + 1]+2.5], [100, 100], color="darkolivegreen", linewidth=1.5,
                      label="RR interval", zorder=2)
             plt.ylabel("ABP [mmHg]", fontsize=12)
@@ -188,7 +188,35 @@ class FromSignal:
         plt.xlim(left=wd_datetime[0], right=wd_datetime[-1])
         plt.legend()
         plt.tight_layout()
-        plt.savefig(output_path, format="pdf")
+        # plt.savefig(output_path, format="pdf")
+        plt.show()
+        plt.close()
+
+    def plot_pulsation(self, wd_number=None, file=None):
+        """
+        Method to plot a specific pulsation from a signal.
+        """
+        output_path = os.path.join("C:/Python/ZSSI/plots/signals", f"{file}.svg")
+        signal_type = self.signal_type
+        use_latex()
+        wd = self.wd
+        if wd_number > len(wd) - 2:
+            raise ValueError(f"The signal contains {len(wd) - 2} windows!")
+        i = wd_number
+        start, end = wd[i], wd[i + 1]
+        wd_datetime, wd_signal = self.datetime[start:end], self.signal[start:end]
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.set_box_aspect(1)
+        ax.plot(wd_datetime, wd_signal, label=f"_{signal_type.upper()}", linewidth=16, zorder=3, color='black')
+        plt.xlim(left=wd_datetime[0] - 20, right=wd_datetime[-1] + 20)
+        plt.ylim(bottom=min(wd_signal) - 5, top=max(wd_signal) + 5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_color("#191970")
+            spine.set_linewidth(16)
+        plt.tight_layout()
+        plt.savefig(output_path, format="svg", bbox_inches="tight")
         plt.show()
         plt.close()
 

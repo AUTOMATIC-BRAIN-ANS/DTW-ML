@@ -5,7 +5,7 @@
 import os
 import pandas as pd
 
-metric = "ABP_SPP-CBFV_SPP"
+metric = "ABP_SPO-CBFV_SPO"
 data_path = "C:/Python/ZSSI/data/dtw/reorganised"
 all_means = pd.DataFrame()
 breaths = os.listdir(data_path)
