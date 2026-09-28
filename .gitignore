@@ -8,3 +8,6 @@ __pycache__/
 # packaging build metadata (pip install -e .)
 *.egg-info/
 build/
+
+# virtual environment
+.venv
