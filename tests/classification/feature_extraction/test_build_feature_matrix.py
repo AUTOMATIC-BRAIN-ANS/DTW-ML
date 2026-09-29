@@ -1,5 +1,5 @@
 """
-Unit tests for classification/build_feature_matrix.py on synthetic cost files.
+Unit tests for classification/feature_extraction/build_feature_matrix.py on synthetic cost files.
 """
 
 import math
@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from scipy.stats import kurtosis, skew
 
-from project.classification.build_feature_matrix import (
+from project.classification.feature_extraction.build_feature_matrix import (
     FEATURES,
     CostReader,
     FeatureMatrix,

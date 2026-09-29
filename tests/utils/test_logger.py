@@ -3,6 +3,7 @@ Unit tests for utils/logger.py.
 """
 
 import logging
+import re
 
 from project.utils.logger import LoggerUtils
 
@@ -17,7 +18,8 @@ def test_setup_logs_to_file_and_counts_levels(tmp_path):
     logger.critical("error 2")
     assert (counter.warnings, counter.errors) == (1, 2)
     text = log_path.read_text(encoding="utf-8")
-    assert "INFO    | info" in text and "WARNING | warning" in text
+    assert re.search(r"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] \[INFO\] info$", text, re.MULTILINE)
+    assert "] [WARNING] warning" in text and "] [ERROR] error 1" in text and "] [CRITICAL] error 2" in text
     # a second setup replaces the handlers instead of adding more
     counter = LoggerUtils.setup(logger, str(log_path))
     assert len(logger.handlers) == 3

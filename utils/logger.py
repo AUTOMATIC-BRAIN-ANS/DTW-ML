@@ -36,7 +36,8 @@ class LoggerUtils:
         logger.handlers.clear()
         logger.setLevel(logging.INFO)
         logger.propagate = False
-        formatter = logging.Formatter("%(asctime)s | %(levelname)-7s | %(message)s")
+        # e.g. "[2026-09-29 16:35:16] [INFO] message"
+        formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
         for handler in (logging.StreamHandler(), logging.FileHandler(log_path, mode="w", encoding="utf-8")):
             handler.setFormatter(formatter)
             logger.addHandler(handler)

@@ -19,9 +19,9 @@ from scipy.stats import kurtosis, linregress, skew
 from project.utils.logger import LoggerUtils
 
 # ============================== CONFIGURATION ==============================
-METHOD = "d-method"
+METHOD = "td-method"
 INPUT_DIR = f"C:/Python/ZSSI/data/dtw/reorganised/{METHOD}"
-OUTPUT_DIR = f"C:/Python/ZSSI/data/classification/{METHOD}"
+OUTPUT_DIR = f"C:/Python/ZSSI/data/classification/features/{METHOD}"
 CONDITIONS = ["BAS", "B6", "B10", "B15"]
 METRICS = ["ABP_RR-CBFV_RR", "ABP_SPO-CBFV_SPO", "ABP_SPP-CBFV_SPP"]
 SEPARATOR = ";"
