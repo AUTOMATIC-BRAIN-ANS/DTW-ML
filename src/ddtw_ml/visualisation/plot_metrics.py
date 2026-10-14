@@ -9,8 +9,6 @@ import pandas as pd
 
 from ddtw_ml.common import use_latex
 
-use_latex()
-
 # BEFORE PREPROCESSING
 """data_path = "C:/Python/ZSSI/data_v2/dtw/raw"
 directories = os.listdir(data_path)
@@ -78,56 +76,64 @@ for directory in directories:
 
 # AFTER PREPROCESSING
 data_path = "C:/Python/ZSSI/data_v2/dtw/preprocessed"
-directories = os.listdir(data_path)
-for directory in directories:
-    directory_path = os.path.join(data_path, directory)
-    files = os.listdir(directory_path)
-    for file in files:
-        file_path = os.path.join(directory_path, file)
-        data = pd.read_csv(file_path, delimiter=';')
-        df = pd.DataFrame(data)
-        m = "CBFV"
-        datetime, spo, spp, rr = (df["DateTime"], df[f"{m}_SPO"], df[f"{m}_SPP"], df[f"{m}_RR"])
 
-        fig = plt.figure(figsize=(10, 6))
-        gs = fig.add_gridspec(2, 2, height_ratios=[1, 0.7])
 
-        # top 4 plots (2x2)
-        ax1 = fig.add_subplot(gs[0, 0])
-        ax2 = fig.add_subplot(gs[0, 1])
+def main() -> None:
+    use_latex()
+    directories = os.listdir(data_path)
+    for directory in directories:
+        directory_path = os.path.join(data_path, directory)
+        files = os.listdir(directory_path)
+        for file in files:
+            file_path = os.path.join(directory_path, file)
+            data = pd.read_csv(file_path, delimiter=';')
+            df = pd.DataFrame(data)
+            m = "CBFV"
+            datetime, spo, spp, rr = (df["DateTime"], df[f"{m}_SPO"], df[f"{m}_SPP"], df[f"{m}_RR"])
 
-        # bottom wide plot
-        ax5 = fig.add_subplot(gs[1, :])
+            fig = plt.figure(figsize=(10, 6))
+            gs = fig.add_gridspec(2, 2, height_ratios=[1, 0.7])
 
-        # plot data
-        ax1.plot(datetime, spo, color="purple")
-        ax1.set_title("Systolic phase onset")
+            # top 4 plots (2x2)
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[0, 1])
 
-        ax2.plot(datetime, spp, color="green")
-        ax2.set_title("Systolic phase peak")
+            # bottom wide plot
+            ax5 = fig.add_subplot(gs[1, :])
 
-        ax5.plot(datetime, rr, color="darkolivegreen")
-        ax5.set_title("RR interval")
+            # plot data
+            ax1.plot(datetime, spo, color="purple")
+            ax1.set_title("Systolic phase onset")
 
-        for ax in [ax1, ax2, ax5]:
-            ax.set_xlim(left=datetime[0], right=len(datetime))
-            ax.set_xlabel("Window [-]")
-            ax.minorticks_on()
-            ax.grid(which='major', linestyle='-', linewidth=0.7)
-            ax.grid(which='minor', linestyle=':', linewidth=0.5, alpha=0.7)
-            if ax != ax5:
-                ax.set_ylabel("Value [$\mathrm{cm \cdot s^{-1}}$]")  # [$\mathrm{cm \cdot s^{-1}}$]
-            else:
-                ax.set_ylabel("Value [s]")
+            ax2.plot(datetime, spp, color="green")
+            ax2.set_title("Systolic phase peak")
 
-        plt.suptitle(f"{m} metrics")
-        plt.tight_layout()
-        plt.grid()
+            ax5.plot(datetime, rr, color="darkolivegreen")
+            ax5.set_title("RR interval")
 
-        output_path = f"C:/Python/ZSSI/plots/metrics/after_prep/{m.lower()}/{directory}"
-        os.makedirs(output_path, exist_ok=True)
-        file = os.path.splitext(file)[0]
-        plt.savefig(f"{output_path}/{file}.pdf", format="pdf")
+            for ax in [ax1, ax2, ax5]:
+                ax.set_xlim(left=datetime[0], right=len(datetime))
+                ax.set_xlabel("Window [-]")
+                ax.minorticks_on()
+                ax.grid(which='major', linestyle='-', linewidth=0.7)
+                ax.grid(which='minor', linestyle=':', linewidth=0.5, alpha=0.7)
+                if ax != ax5:
+                    ax.set_ylabel("Value [$\mathrm{cm \cdot s^{-1}}$]")  # [$\mathrm{cm \cdot s^{-1}}$]
+                else:
+                    ax.set_ylabel("Value [s]")
 
-        # plt.show()
-        plt.close()
+            plt.suptitle(f"{m} metrics")
+            plt.tight_layout()
+            plt.grid()
+
+            output_path = f"C:/Python/ZSSI/plots/metrics/after_prep/{m.lower()}/{directory}"
+            os.makedirs(output_path, exist_ok=True)
+            file = os.path.splitext(file)[0]
+            plt.savefig(f"{output_path}/{file}.pdf", format="pdf")
+
+            # plt.show()
+            plt.close()
+
+
+if __name__ == "__main__":
+    main()

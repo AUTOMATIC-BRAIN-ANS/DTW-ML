@@ -8,19 +8,26 @@ import pandas as pd
 
 method = 'td-method'
 data_path = f"C:/Python/ZSSI/data/dtw/reorganised/{method}"
-directories = os.listdir(data_path)
-for directory in directories:
-    print(f"=== {directory} ===")
-    directory_path = os.path.join(data_path, directory)
-    files = os.listdir(directory_path)
-    for file in files:
-        print(f"{file} being processed...")
-        file_path = os.path.join(directory_path, file)
-        data = pd.read_csv(file_path, delimiter=';')
-        df = pd.DataFrame(data)
-        merged_col = df.iloc[0:].stack().reset_index(drop=True)
-        # stack() on single-level columns always returns a Series; pandas-stubs also allows DataFrame
-        merged_df = merged_col.to_frame(name="costs")  # type: ignore[operator]
-        output_path = f"C:/Python/ZSSI/data/ml-data/{method}/{directory}/{file}.csv"
-        merged_df.to_csv(output_path, sep=';', index=False)
-        print("Done!")
+
+
+def main() -> None:
+    directories = os.listdir(data_path)
+    for directory in directories:
+        print(f"=== {directory} ===")
+        directory_path = os.path.join(data_path, directory)
+        files = os.listdir(directory_path)
+        for file in files:
+            print(f"{file} being processed...")
+            file_path = os.path.join(directory_path, file)
+            data = pd.read_csv(file_path, delimiter=';')
+            df = pd.DataFrame(data)
+            merged_col = df.iloc[0:].stack().reset_index(drop=True)
+            # stack() on single-level columns always returns a Series; pandas-stubs also allows DataFrame
+            merged_df = merged_col.to_frame(name="costs")  # type: ignore[operator]
+            output_path = f"C:/Python/ZSSI/data/ml-data/{method}/{directory}/{file}.csv"
+            merged_df.to_csv(output_path, sep=';', index=False)
+            print("Done!")
+
+
+if __name__ == "__main__":
+    main()

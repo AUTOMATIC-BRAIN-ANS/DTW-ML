@@ -95,4 +95,5 @@ def extract_signals():
     print("\n=== Extraction completed ===")
 
 
-extract_signals()
+if __name__ == "__main__":
+    extract_signals()

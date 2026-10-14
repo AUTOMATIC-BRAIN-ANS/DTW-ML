@@ -65,18 +65,22 @@ for breath in breaths:
     new_df.to_csv(f"{output_path}/{breath}_all.csv", sep=';', index=True)"""
 
 # MEDIANS DISPLAY
-# data = pd.read_csv("C:/Python/ZSSI/data/characteristics/metrics/B15_all.csv", delimiter=';')
-data = pd.read_csv("C:/Python/ZSSI/data/ml-data/d-method/BAS/ABP_RR-CBFV_RR.csv.csv", delimiter=';')
-df = pd.DataFrame(data)
 
-median = df.median()
 
-q1 = df.quantile(0.25)
-q3 = df.quantile(0.75)
+def main() -> None:
+    # data = pd.read_csv("C:/Python/ZSSI/data/characteristics/metrics/B15_all.csv", delimiter=';')
+    data = pd.read_csv("C:/Python/ZSSI/data/ml-data/d-method/BAS/ABP_RR-CBFV_RR.csv.csv", delimiter=';')
+    df = pd.DataFrame(data)
 
-result = "$" + median.round(3).astype(str) + "$$" + "(" + q1.round(3).astype(str) + "\text{-}" + q3.round(3).astype(str) + ")$"
+    median = df.median()
 
-print(result)
+    q1 = df.quantile(0.25)
+    q3 = df.quantile(0.75)
+
+    result = "$" + median.round(3).astype(str) + "$$" + "(" + q1.round(3).astype(str) + "\text{-}" + q3.round(3).astype(str) + ")$"
+
+    print(result)
+
 
 # GET DATA FOR ANOVA
 """b6 = pd.read_csv("C:/Python/ZSSI/data/characteristics/metrics_for_anova/B6_all.csv", delimiter=';')
@@ -135,3 +139,7 @@ bas = bas[['ABP_SPO', 'CBFV_SPO', 'ABP_SPP', 'CBFV_SPP', 'ABP_RR', 'CBFV_RR']].r
 
 merged = pd.concat([bas, b6, b10, b15], axis=1)
 merged.to_csv("C:/Python/ZSSI/data/characteristics/metrics_for_anova.csv", sep=';')"""
+
+
+if __name__ == "__main__":
+    main()

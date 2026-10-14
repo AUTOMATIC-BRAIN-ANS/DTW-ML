@@ -12,10 +12,6 @@ from statsmodels.stats.multitest import multipletests
 metrics = ["SPO", "SPP", "RR"]
 i = 2
 
-df = pd.read_csv("C:/Python/ZSSI/data/characteristics/metrics_for_anova.csv", sep=";")
-df.columns = df.columns.str.strip()
-df["Subject"] = range(1, len(df) + 1)
-
 
 # ---------- FUNCTION FOR POST-HOC ----------
 def post_hoc_tests(df_wide, conditions):
@@ -36,44 +32,53 @@ def post_hoc_tests(df_wide, conditions):
         print(f"{c1} vs {c2}: t={stat:.3f}, p={p:.5f}, p_corr={p_corr:.5f}, significant={r}")
 
 
-# ----- ABP -----
-# abp_cols = [f"BAS_ABP", f"B6_ABP", f"B10_ABP", f"B15_ABP"]
-abp_cols = [f"BAS_ABP_{metrics[i]}", f"B6_ABP_{metrics[i]}",
-             f"B10_ABP_{metrics[i]}", f"B15_ABP_{metrics[i]}"]
+def main() -> None:
+    df = pd.read_csv("C:/Python/ZSSI/data/characteristics/metrics_for_anova.csv", sep=";")
+    df.columns = df.columns.str.strip()
+    df["Subject"] = range(1, len(df) + 1)
 
-abp = pd.melt(df,
-              id_vars=["Subject"],
-              value_vars=abp_cols,
-              var_name="Breath",
-              value_name="ABP")
+    # ----- ABP -----
+    # abp_cols = [f"BAS_ABP", f"B6_ABP", f"B10_ABP", f"B15_ABP"]
+    abp_cols = [f"BAS_ABP_{metrics[i]}", f"B6_ABP_{metrics[i]}",
+                 f"B10_ABP_{metrics[i]}", f"B15_ABP_{metrics[i]}"]
 
-abp["Breath"] = abp["Breath"].str.replace("_ABP", "")
+    abp = pd.melt(df,
+                  id_vars=["Subject"],
+                  value_vars=abp_cols,
+                  var_name="Breath",
+                  value_name="ABP")
 
-anova_abp = AnovaRM(abp, "ABP", "Subject", within=["Breath"]).fit()
+    abp["Breath"] = abp["Breath"].str.replace("_ABP", "")
 
-p_abp = anova_abp.anova_table["Pr > F"].iloc[0]
-print("ABP p-value:", p_abp)
+    anova_abp = AnovaRM(abp, "ABP", "Subject", within=["Breath"]).fit()
 
-if p_abp < 0.05:
-    post_hoc_tests(df[abp_cols], abp_cols)
+    p_abp = anova_abp.anova_table["Pr > F"].iloc[0]
+    print("ABP p-value:", p_abp)
 
-# ----- CBFV -----
-# cbfv_cols = [f"BAS_CBFV", f"B6_CBFV", f"B10_CBFV", f"B15_CBFV"]
-cbfv_cols = [f"BAS_CBFV_{metrics[i]}", f"B6_CBFV_{metrics[i]}",
-             f"B10_CBFV_{metrics[i]}", f"B15_CBFV_{metrics[i]}"]
+    if p_abp < 0.05:
+        post_hoc_tests(df[abp_cols], abp_cols)
 
-cbfv = pd.melt(df,
-               id_vars=["Subject"],
-               value_vars=cbfv_cols,
-               var_name="Breath",
-               value_name="CBFV")
+    # ----- CBFV -----
+    # cbfv_cols = [f"BAS_CBFV", f"B6_CBFV", f"B10_CBFV", f"B15_CBFV"]
+    cbfv_cols = [f"BAS_CBFV_{metrics[i]}", f"B6_CBFV_{metrics[i]}",
+                 f"B10_CBFV_{metrics[i]}", f"B15_CBFV_{metrics[i]}"]
 
-cbfv["Breath"] = cbfv["Breath"].str.replace("_CBFV", "")
+    cbfv = pd.melt(df,
+                   id_vars=["Subject"],
+                   value_vars=cbfv_cols,
+                   var_name="Breath",
+                   value_name="CBFV")
 
-anova_cbfv = AnovaRM(cbfv, "CBFV", "Subject", within=["Breath"]).fit()
+    cbfv["Breath"] = cbfv["Breath"].str.replace("_CBFV", "")
 
-p_cbfv = anova_cbfv.anova_table["Pr > F"].iloc[0]
-print("CBFV p-value:", p_cbfv)
+    anova_cbfv = AnovaRM(cbfv, "CBFV", "Subject", within=["Breath"]).fit()
 
-if p_cbfv < 0.05:
-    post_hoc_tests(df[cbfv_cols], cbfv_cols)
+    p_cbfv = anova_cbfv.anova_table["Pr > F"].iloc[0]
+    print("CBFV p-value:", p_cbfv)
+
+    if p_cbfv < 0.05:
+        post_hoc_tests(df[cbfv_cols], cbfv_cols)
+
+
+if __name__ == "__main__":
+    main()
