@@ -1,12 +1,13 @@
-# Central configuration of the data layout of the pipeline.
+# Central configuration of the pipeline: data versions, stages and their order, run parameters.
 #
-# Every stage except raw lives inside a data version:
-#     {data.root}/{version}/{stages.<name>.path}
+# Every stage lives inside a data version:
+#     {data.root}/{version}/{path}
+# where path = stages.<key>.path (default: the key itself), unless the version overrides it in versions.<v>.paths.
 # Raw data is the single source of truth and sits outside the versions:
 #     {data.root}/{data.raw.path}
 # Plots are versioned like the data they show:
-#     {plots.root}/{version}/{plots.<name>.path}
-# Each version is a complete run of the pipeline from raw. A frozen version is read-only.
+#     {plots.root}/{version}/{path}
+# The order of the stages follows from their inputs (`python -m ddtw_ml list`). A frozen version is read-only.
 #
 # Versions are strings ("1.0", not 1.0): as TOML floats, 1.1 and 1.10 would be equal.
 #
@@ -14,12 +15,16 @@
 # (not versioned, see config.local.example.toml), which is merged over this file.
 
 [data]
-# active version: the one the scripts read from and write to
+# active version: the one the stages read from and write to
 version = "2.0"
 
 [data.raw]
 path = "raw"
 description = "Raw CSV files from the measuring equipment (OCH_*, PAC_*), one directory per condition. Read-only."
+
+[data.spoiled]
+path = "spoiled"
+description = "Copies of the inputs rejected by a stage, one directory per condition, with the reasons in _failures.csv."
 
 # ================================ VERSIONS =================================
 
@@ -27,135 +32,141 @@ description = "Raw CSV files from the measuring equipment (OCH_*, PAC_*), one di
 description = "Pre-refactor results."
 frozen = true
 
+# directory names of the stages before the refactoring
+[versions."1.0".paths]
+recordings = "extracted"
+cleaned = "preprocessed"
+filtered = "filtered"
+beats = "metrics"
+paired = "dtw/raw"
+normalised = "dtw/preprocessed"
+costs = "dtw/dtw"
+pairs = "dtw/reorganised"
+mean_costs = "dtw/summary"
+anova = "statistics"
+tables = "characteristics"
+features = "classification/features"
+cv_results = "classification/results"
+scores = "classification/summary"
+
 [versions."2.0"]
 description = "Refactored pipeline; revised results."
 frozen = false
 
+# ============================= RUN PARAMETERS ==============================
+
+[run]
+conditions = ["B6", "B10", "B15", "BAS"]
+# methods of the DTW alignment cost
+methods = ["td-method", "d-method"]
+# ABP-CBFV pairs of the beat-to-beat metrics compared with DTW
+pairs = [
+    "ABP_SPO-CBFV_SPO",
+    "ABP_SPP-CBFV_SPP",
+    "ABP_SPO-CBFV_SPP",
+    "ABP_SPP-CBFV_SPO",
+    "ABP_RR-CBFV_SPO",
+    "ABP_RR-CBFV_SPP",
+    "ABP_SPO-CBFV_RR",
+    "ABP_SPP-CBFV_RR",
+    "ABP_RR-CBFV_RR",
+]
+# beat-to-beat metrics compared between the conditions (medians per subject)
+metrics = ["SPO", "SPP", "RR"]
+
 # ================================= STAGES ==================================
-# path: relative to {data.root}/{version}
-# input: stage(s) the data is computed from
-# produced_by: module that writes the stage
+# input: stage(s) the data is computed from ("raw" = raw data)
+# module: module of the stage, with run(ctx)
 
-[stages.extracted]
-path = "extracted"
-description = "DateTime (Excel serial), ABP, CBFV, BPM per subject: {condition}/V{i}_{condition}.csv"
+[stages.recordings]
+description = "DateTime (Excel serial), ABP, CBFV = max(FV left, FV right), BPM per subject: {condition}/V{i}_{condition}.csv"
 input = ["raw"]
-produced_by = "ddtw_ml.data.prepare_files"
+module = "ddtw_ml.stages.import_recordings"
 
-[stages.preprocessed]
-path = "preprocessed"
+[stages.cleaned]
 description = "Signals after artefact and outlier removal, trimming, interpolation and smoothing: {condition}/..._PP.csv"
-input = ["extracted"]
-produced_by = "ddtw_ml.execution.preprocessing"
+input = ["recordings"]
+module = "ddtw_ml.stages.clean_signals"
 
 [stages.filtered]
-path = "filtered"
 description = "ABP and CBFV with the breathing frequency removed (FFT): {condition}/..._PP_F.csv"
-input = ["preprocessed"]
-produced_by = "ddtw_ml.execution.filtering"
+input = ["cleaned"]
+module = "ddtw_ml.stages.remove_breathing"
 
-[stages.metrics]
-path = "metrics"
+[stages.beats]
 description = "Beat-to-beat metrics (SPO, SPP, DN, DPP, RR): {condition}/..._PP_F/{ABP,CBFV}.csv"
 input = ["filtered"]
-produced_by = "ddtw_ml.execution.metrics_extraction"
+module = "ddtw_ml.stages.compute_beat_metrics"
 
-[stages.dtw_raw]
-path = "dtw/raw"
-description = "ABP and CBFV metrics merged into one file: {condition}/..._PP_F_M.csv"
-input = ["metrics"]
-produced_by = "ddtw_ml.other.merging"
+[stages.paired]
+description = "ABP and CBFV beats paired by their number in one file: {condition}/..._PP_F_M.csv"
+input = ["beats"]
+module = "ddtw_ml.stages.pair_beat_metrics"
 
-[stages.dtw_preprocessed]
-path = "dtw/preprocessed"
+[stages.normalised]
 description = "Metrics after outlier removal, interpolation and Generalized Logistic normalisation: {condition}/..._M_PP.csv"
-input = ["dtw_raw"]
-produced_by = "ddtw_ml.execution.preprocessing"
+input = ["paired"]
+module = "ddtw_ml.stages.normalise_beat_metrics"
 
-[stages.dtw_costs]
-path = "dtw/dtw"
+[stages.costs]
 description = "Sliding-window DDTW costs of the ABP-CBFV metric pairs: {method}/{condition}/..._PP_DTW.csv"
-input = ["dtw_preprocessed"]
-produced_by = "ddtw_ml.execution.perform_dtw"
+input = ["normalised"]
+module = "ddtw_ml.stages.compute_dtw_costs"
 
-[stages.dtw_reorganised]
-path = "dtw/reorganised"
+[stages.pairs]
 description = "DTW costs per metric pair, one column per subject: {method}/{condition}/{pair}.csv"
-input = ["dtw_costs"]
-produced_by = "ddtw_ml.other.reorganise"
+input = ["costs"]
+module = "ddtw_ml.stages.group_costs_by_pair"
 
-[stages.dtw_summary]
-path = "dtw/summary"
+[stages.mean_costs]
 description = "Mean DTW cost per subject and method_condition: {pair}.csv"
-input = ["dtw_reorganised"]
-produced_by = "ddtw_ml.other.get_summary"
+input = ["pairs"]
+module = "ddtw_ml.stages.average_costs_per_subject"
 
-[stages.statistics]
-path = "statistics"
-description = "RM-ANOVA and Bonferroni post-hoc results: {pair}/{method}_{anova,posthoc}_results.csv"
-input = ["dtw_summary"]
-produced_by = "ddtw_ml.statistics.statistical_analysis"
+[stages.anova]
+description = "RM-ANOVA and Bonferroni post-hoc of the mean DTW costs between the conditions: {pair}/{method}_{anova,posthoc}_results.csv"
+input = ["mean_costs"]
+module = "ddtw_ml.stages.compare_conditions"
 
-[stages.ml_data]
-path = "ml-data"
-description = "DTW costs prepared for machine learning: {method}/{condition}/{pair}.csv"
-input = ["dtw_reorganised"]
-produced_by = "ddtw_ml.other.get_data_for_ml"
+[stages.tables]
+description = "Medians and IQRs of the beat-to-beat metrics for the LaTeX tables and the RM-ANOVA of the metrics"
+input = ["paired"]
+module = "ddtw_ml.stages.tabulate_medians"
 
-[stages.characteristics]
-path = "characteristics"
-description = "Medians and IQRs of the signals and metrics for the LaTeX tables and RM-ANOVA"
-input = ["extracted", "dtw_raw"]
-produced_by = "ddtw_ml.data.get_data_characteristics"
+[stages.metric_anova]
+description = "RM-ANOVA and Bonferroni post-hoc of the medians of the metrics between the conditions: {metric}.csv"
+input = ["tables"]
+module = "ddtw_ml.stages.compare_metric_medians"
 
-[stages.classification_features]
-path = "classification/features"
+[stages.features]
 description = "Feature matrices built from the sliding-window DTW costs: {method}/{pair}.csv"
-input = ["dtw_reorganised"]
-produced_by = "ddtw_ml.classification.feature_extraction.build_feature_matrix"
+input = ["pairs"]
+module = "ddtw_ml.stages.build_feature_matrices"
 
-[stages.classification_results]
-path = "classification/results"
-description = "Per-model classification results: {method}/{pair}/{model}/{validation}/"
-input = ["classification_features"]
-produced_by = "ddtw_ml.classification.classify"
+[stages.cv_results]
+description = "Per-model cross-validation results: {method}/{pair}/{model}/{validation}/"
+input = ["features"]
+module = "ddtw_ml.stages.cross_validate_classifiers"
 
-[stages.classification_summary]
-path = "classification/summary"
+[stages.scores]
 description = "Classification metrics collected per model: {model}.csv"
-input = ["classification_results"]
-produced_by = "ddtw_ml.classification.summary.collect_metrics"
-
-[stages.spoiled]
-path = "spoiled"
-description = "Files rejected during preprocessing or merging: {condition}/"
-input = []
-produced_by = "ddtw_ml.execution.preprocessing, ddtw_ml.other.merging"
+input = ["cv_results"]
+module = "ddtw_ml.stages.collect_classifier_scores"
 
 # ================================== PLOTS ==================================
-# path: relative to {plots.root}/{version}
-# input: stage(s) the plot shows
+# path: relative to {plots.root}/{version} (default: the key itself)
 
-[plots.preprocessing]
-path = "preprocessing"
-description = "Signals before and after each preprocessing step: {file}.pdf"
-input = ["extracted"]
-produced_by = "ddtw_ml.data.preprocess_data"
+[plots.cleaning]
+description = "Signals before and after each cleaning step: {file}.pdf"
+input = ["recordings"]
+module = "ddtw_ml.plots.plot_cleaning_steps"
 
-[plots.signals]
-path = "signals"
-description = "Filtered signals with the detected troughs and beats: {file}.svg"
-input = ["filtered"]
-produced_by = "ddtw_ml.metrics.extract_metrics"
+[plots.beats]
+description = "Beat-to-beat metrics before and after normalisation: {paired,normalised}/{metric}/{condition}/{file}.pdf"
+input = ["paired", "normalised"]
+module = "ddtw_ml.plots.plot_beat_metrics"
 
-[plots.metrics]
-path = "metrics"
-description = "Beat-to-beat metrics: {file}.pdf; before/after preprocessing: {before_prep,after_prep}/{metric}/{condition}/"
-input = ["metrics", "dtw_raw", "dtw_preprocessed"]
-produced_by = "ddtw_ml.metrics.extract_metrics, ddtw_ml.visualisation.plot_metrics"
-
-[plots.dtw_costs]
-path = "dtw/cost_per_window"
-description = "DTW cost per sliding window: {condition}/{method}/{title}.pdf"
-input = ["dtw_costs"]
-produced_by = "ddtw_ml.visualisation.alignment_cost"
+[plots.costs]
+description = "DTW cost per sliding window: {method}/{condition}/{file}.pdf"
+input = ["costs"]
+module = "ddtw_ml.plots.plot_costs_per_window"
