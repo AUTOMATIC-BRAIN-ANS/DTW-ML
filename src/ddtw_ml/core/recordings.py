@@ -1,8 +1,7 @@
 """
 @author: Radoslaw Plawecki
+Reading of the raw recordings: three CSV formats of the measuring equipment.
 """
-
-import os
 
 import pandas as pd
 
@@ -61,39 +60,3 @@ def load_signals(file_path):
         except Exception:
             continue
     raise ValueError(f"No matching format for file: {file_path}")
-
-
-def extract_signals():
-    print("=== Starting extraction ===")
-    base = "C:/Python/ZSSI/data/"
-    raw = os.path.join(base, "raw")
-    output_base = os.path.join(base, "extracted")
-    for directory in os.listdir(raw):
-        directory_path = os.path.join(raw, directory)
-        if not os.path.isdir(directory_path):
-            continue
-        print(f"\n=== Directory: {directory} ===")
-        out_dir = os.path.join(output_base, directory)
-        os.makedirs(out_dir, exist_ok=True)
-        for i, file in enumerate(os.listdir(directory_path), start=1):
-            file_path = os.path.join(directory_path, file)
-            print(f"-> Processing: {file}")
-            try:
-                datetime, abp, cbfv, bpm = load_signals(file_path)
-                new_df = pd.DataFrame({
-                    "DateTime": datetime,
-                    "ABP": abp,
-                    "CBFV": cbfv,
-                    "BPM": bpm
-                })
-                out_file = os.path.join(out_dir, f"V{i}_{directory}.csv")
-                print(f"{file}: V{i}")
-                # new_df.to_csv(out_file, sep=";", index=False)
-                print("✔ Success")
-            except Exception as e:
-                print(f"✖ Failed ({e})")
-    print("\n=== Extraction completed ===")
-
-
-if __name__ == "__main__":
-    extract_signals()

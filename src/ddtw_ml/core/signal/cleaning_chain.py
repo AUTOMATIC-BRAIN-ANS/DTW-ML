@@ -4,6 +4,8 @@ Sources:
 https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-interquartile-range-iqr-b55b9726363e
 """
 
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -15,19 +17,18 @@ from ddtw_ml.utils.validation import check_column_existence, check_path
 
 
 class PreprocessData:
-    def __init__(self, filename, first_column, second_column, third_column):
+    def __init__(self, filepath, first_column, second_column, third_column):
         """
         Method to initialize params of a class.
-        :param filename: name of a file.
+        :param filepath: path of a CSV file with the signals.
         :param first_column: name of a first column to analyse.
         :param second_column: name of a second column to analyse.
         :raise FileNotFoundError: if a file is not found.
         :raise IsADirectoryError: if a path exists but leads to, for example, directory instead of a file.
         :raise ValueError: if a file is not a CSV file.
         """
-        filepath = f"C:/Python/ZSSI/data/extracted/{filename}.csv"
         check_path(filepath)
-        self.filename = filename
+        self.filename = os.path.splitext(os.path.basename(filepath))[0]
         data = pd.read_csv(filepath, delimiter=';')
         df = pd.DataFrame(data)
         check_column_existence(df=df, col=first_column)
@@ -225,11 +226,12 @@ class PreprocessData:
                   "(c) Sygnał zinterpolowany", "(d) Sygnał po normalizacji"]
         return timeseries, signals, titles
 
-    def plot_signals(self, s=None, filename=None):
+    def plot_signals(self, s=None, output_path=None, show=True):
         """
         Method to plot a signal on different steps of preprocessing.
         :param s: signal.
-        :param filename: name of a file with a plot.
+        :param output_path: path of a PDF file to save the plot to (None: not saved).
+        :param show: whether to show the plot (otherwise the figure is closed).
         :return: None, if a signal is incorrect.
         """
         use_latex()
@@ -252,16 +254,18 @@ class PreprocessData:
                 ax[i, j].set_xlim(xmin=0, xmax=max(timeseries[k]))
                 ax[i, j].grid()
                 k += 1
-        if filename is not None:
-            plt.savefig(f"C:/Python/ZSSI/plots/preprocessing/{filename}.pdf", format='pdf')
-        plt.show()
+        if output_path is not None:
+            plt.savefig(output_path, format='pdf')
+        if show:
+            plt.show()
+        else:
+            plt.close(fig)
 
-    def export_preprocessed_data(self):
+    def get_preprocessed_data(self):
         """
-        Method to export preprocessed data.
-        :return: None.
+        Method to get the preprocessed data.
+        :return: DateTime and the smoothed first, second and (untrimmed, B-05) third signal, cut to the shortest one.
         """
-        print(f"File: {self.filename} being processed...")
         datetime, col1, col2, col3 = "DateTime", self.first_column, self.second_column, self.third_column
         s1, s2, s3 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed(), self.get_third_signal()
         min_len = min(len(s1), len(s2), len(s3))
@@ -272,5 +276,4 @@ class PreprocessData:
             col2: s2[:min_len],
             col3: s3[:min_len]
         }
-        df = pd.DataFrame(data)
-        df.to_csv(f"C:/Python/ZSSI/data/preprocessed/{self.filename}_PP.csv", sep=';', index=False)
+        return pd.DataFrame(data)

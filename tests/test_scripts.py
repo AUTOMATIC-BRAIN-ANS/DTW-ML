@@ -1,10 +1,11 @@
 """
-Tests of the pipeline scripts: importing them has no side effects, and the legacy scripts that overwrite the raw data
-refuse to run.
+Tests of the pipeline scripts and stages: importing them has no side effects, every stage has run(ctx), and the legacy
+scripts that overwrite the raw data refuse to run.
 """
 
 import importlib
 import os
+import pkgutil
 import runpy
 import sys
 import types
@@ -14,8 +15,6 @@ import pytest
 
 SCRIPTS = [
     "ddtw_ml.data.get_data_characteristics",
-    "ddtw_ml.data.prepare_files",
-    "ddtw_ml.execution.filtering",
     "ddtw_ml.execution.metrics_extraction",
     "ddtw_ml.execution.perform_dtw",
     "ddtw_ml.execution.preprocessing",
@@ -31,6 +30,7 @@ SCRIPTS = [
     "ddtw_ml.visualisation.alignment_cost",
     "ddtw_ml.visualisation.plot_metrics",
 ]
+STAGES = [f"ddtw_ml.stages.{m.name}" for m in pkgutil.iter_modules(importlib.import_module("ddtw_ml.stages").__path__)]
 LEGACY = ["ddtw_ml.other.comma_to_dot", "ddtw_ml.other.parse_dot_separated_data"]
 
 
@@ -56,7 +56,13 @@ def no_data_access(monkeypatch):
 def test_import_has_no_side_effects(name, no_data_access, monkeypatch):
     monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.import_module(name)
-    assert callable(getattr(module, "main", None) or getattr(module, "extract_signals"))
+    assert callable(module.main)
+
+
+@pytest.mark.parametrize("name", STAGES)
+def test_stage_import_has_no_side_effects(name, no_data_access, monkeypatch):
+    monkeypatch.delitem(sys.modules, name, raising=False)
+    assert callable(importlib.import_module(name).run)
 
 
 @pytest.mark.parametrize("name", LEGACY)

@@ -1,5 +1,7 @@
 """
 @author: Radoslaw Plawecki
+Stage `filtered` (cleaned -> filtered): removes the breathing frequency from ABP and CBFV with the FFT (fs = 200 Hz):
+{condition}/{file}_F.csv. The breathing rate is the paced one (B6, B10, B15) or the mean recorded BPM (BAS).
 """
 
 import os
@@ -8,15 +10,16 @@ import numpy as np
 import pandas as pd
 
 from ddtw_ml.core.signal.breathing_filter import remove_freq
+from ddtw_ml.pipeline import StageContext
 
-base_dir = "C:/Python/ZSSI/data/preprocessed"
 
-
-def main() -> None:
+def run(ctx: StageContext) -> None:
+    base_dir = ctx.input()
     for directory in os.listdir(base_dir):
-        dir_path = os.path.join(base_dir, directory)
+        dir_path = base_dir / directory
+        out_dir = ctx.output(directory)
         for file in os.listdir(dir_path):
-            filename = os.path.join(dir_path, file)
+            filename = dir_path / file
             data = pd.read_csv(filename, delimiter=';')
             df = pd.DataFrame(data)
             s = ['DateTime', 'ABP', 'CBFV', 'BPM']
@@ -37,10 +40,5 @@ def main() -> None:
                 "CBFV": cbfv
             }
             df = pd.DataFrame(filtered)
-            file = os.path.splitext(file)[0]
-            df.to_csv(f"C:/Python/ZSSI/data/filtered/{directory}/{file}_F.csv", sep=';', index=False)
-            print("Data was exported!")
-
-
-if __name__ == "__main__":
-    main()
+            df.to_csv(out_dir / f"{filename.stem}_F.csv", sep=';', index=False)
+            ctx.processed(f"{directory}/{file}")
