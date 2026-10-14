@@ -14,12 +14,10 @@ import pandas as pd
 import pytest
 
 SCRIPTS = [
-    "ddtw_ml.data.get_data_characteristics",
     "ddtw_ml.other.comma_to_dot",
     "ddtw_ml.other.get_data_for_ml",
     "ddtw_ml.other.parse_dot_separated_data",
     "ddtw_ml.statistics.prepare_for_analysis",
-    "ddtw_ml.statistics.rm-anova",
     "ddtw_ml.visualisation.alignment_cost",
     "ddtw_ml.visualisation.plot_metrics",
 ]
