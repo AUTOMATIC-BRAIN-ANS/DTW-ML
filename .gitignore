@@ -11,3 +11,6 @@ build/
 
 # virtual environment
 .venv
+
+# machine-specific configuration (paths to the data)
+config.local.toml

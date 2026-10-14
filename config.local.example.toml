@@ -1,0 +1,7 @@
+# Template of the machine-specific configuration. Copy to config.local.toml (not versioned) and set the paths.
+
+[data]
+root = "/path/to/data"
+
+[plots]
+root = "/path/to/plots"
