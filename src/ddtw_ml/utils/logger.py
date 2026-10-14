@@ -24,11 +24,12 @@ class LevelCounter(logging.Handler):
 
 class LoggerUtils:
     @staticmethod
-    def setup(logger: logging.Logger, log_path: str) -> LevelCounter:
+    def setup(logger: logging.Logger, log_path: str, mode: str = "w") -> LevelCounter:
         """
         Method to make a logger write to the console and to a file; previous handlers of the logger are removed.
         :param logger: logger to configure.
-        :param log_path: path to the log file (overwritten).
+        :param log_path: path to the log file.
+        :param mode: "w" to overwrite the log file, "a" to append to it.
         :return: handler counting warnings and errors.
         """
         for handler in logger.handlers:
@@ -38,7 +39,7 @@ class LoggerUtils:
         logger.propagate = False
         # e.g. "[2026-09-29 16:35:16] [INFO] message"
         formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-        for handler in (logging.StreamHandler(), logging.FileHandler(log_path, mode="w", encoding="utf-8")):
+        for handler in (logging.StreamHandler(), logging.FileHandler(log_path, mode=mode, encoding="utf-8")):
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         counter = LevelCounter()
