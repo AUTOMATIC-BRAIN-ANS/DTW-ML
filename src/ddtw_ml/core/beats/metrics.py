@@ -10,7 +10,7 @@ import pandas as pd
 from detect_troughs import detect_peaks_troughs_optimized
 from scipy.signal import find_peaks
 
-from ddtw_ml.common import use_latex
+from ddtw_ml.utils.plotting import use_latex
 
 
 class FromSignal:

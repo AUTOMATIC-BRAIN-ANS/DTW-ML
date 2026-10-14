@@ -17,7 +17,7 @@ from sklearn.metrics import roc_auc_score, roc_curve
 from ddtw_ml.classification.config import TARGET
 from ddtw_ml.classification.modeling.cross_validation import Results
 from ddtw_ml.classification.scoring.classification_metrics import get_rates
-from ddtw_ml.common import use_latex
+from ddtw_ml.utils.plotting import use_latex
 
 
 def tex(text: str) -> str:

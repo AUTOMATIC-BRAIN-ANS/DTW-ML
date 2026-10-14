@@ -4,7 +4,7 @@
 
 import os
 
-from ddtw_ml.metrics.preprocess_metrics import PreprocessMetrics
+from ddtw_ml.core.beats.normalisation import PreprocessMetrics
 from ddtw_ml.utils.spoiled import copy_to_spoiled
 
 # DATA PREPROCESSING

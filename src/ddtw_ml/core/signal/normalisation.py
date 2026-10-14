@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from ddtw_ml.utils.generalized_logistic import GeneralizedLogistic
+from ddtw_ml.core.signal.generalized_logistic import GeneralizedLogistic
 
 
 class NormalizeData:

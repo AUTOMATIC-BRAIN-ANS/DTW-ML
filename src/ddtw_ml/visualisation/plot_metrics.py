@@ -7,7 +7,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ddtw_ml.common import use_latex
+from ddtw_ml.utils.plotting import use_latex
 
 # BEFORE PREPROCESSING
 """data_path = "C:/Python/ZSSI/data_v2/dtw/raw"

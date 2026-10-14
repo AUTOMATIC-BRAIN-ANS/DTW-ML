@@ -11,7 +11,7 @@ https://github.com/kamperh/lecture_dtw_notebook/blob/main/dtw.ipynb. Access: 29.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ddtw_ml.common import use_latex
+from ddtw_ml.utils.plotting import use_latex
 
 
 class DTW:

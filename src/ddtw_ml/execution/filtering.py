@@ -7,7 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from ddtw_ml.utils.filter_signals import remove_freq
+from ddtw_ml.core.signal.breathing_filter import remove_freq
 
 base_dir = "C:/Python/ZSSI/data/preprocessed"
 

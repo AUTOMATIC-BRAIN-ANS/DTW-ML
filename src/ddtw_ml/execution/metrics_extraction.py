@@ -6,8 +6,8 @@ import os
 
 import pandas as pd
 
-from ddtw_ml.common import use_latex
-from ddtw_ml.metrics.extract_metrics import FromSignal
+from ddtw_ml.core.beats.metrics import FromSignal
+from ddtw_ml.utils.plotting import use_latex
 
 input_path = "C:/Python/ZSSI/data/filtered"
 

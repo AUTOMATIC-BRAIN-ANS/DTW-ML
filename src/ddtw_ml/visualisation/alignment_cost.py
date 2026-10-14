@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from ddtw_ml.common import use_latex
+from ddtw_ml.utils.plotting import use_latex
 
 path = "C:/Python/ZSSI/data_v2/dtw/dtw"
 

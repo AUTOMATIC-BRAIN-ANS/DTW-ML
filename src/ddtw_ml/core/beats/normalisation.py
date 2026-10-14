@@ -4,8 +4,8 @@
 
 import pandas as pd
 
-from ddtw_ml.common import check_path
-from ddtw_ml.utils.preprocessing_utils import PreprocessingUtils as prepUtils
+from ddtw_ml.core.signal.cleaning import PreprocessingUtils as prepUtils
+from ddtw_ml.utils.validation import check_path
 
 
 class PreprocessMetrics:

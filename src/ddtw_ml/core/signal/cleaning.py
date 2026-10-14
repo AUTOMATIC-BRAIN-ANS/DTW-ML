@@ -6,9 +6,39 @@ import numpy as np
 import pandas as pd
 from scipy.signal import savgol_filter
 
-from ddtw_ml.common import values_in_order
-from ddtw_ml.utils.nan_handler import NaNHandler as NaNH
-from ddtw_ml.utils.normalization import NormalizeData
+from ddtw_ml.core.signal.nan_handler import NaNHandler as NaNH
+from ddtw_ml.core.signal.normalisation import NormalizeData
+
+
+def values_in_order(index_list):
+    """
+    Function to replace the list of rowed indices into an array of tuples (A, B), where A is the number in sequence
+    occurring indices, and B is the first element of the given sequence.
+    :param index_list: list of rowed indices.
+    :return: array of tuples.
+    """
+    count = 1
+    summary = []
+    for i in range(len(index_list) - 1, -1, -1):
+        if index_list[i] == index_list[i - 1] + 1:
+            count += 1
+        else:
+            if count >= 1:
+                last_index = index_list[i]
+                summary.append((count, last_index))
+            count = 1
+    return list(reversed(summary))
+
+
+def make_blocks(s):
+    """
+    Function to make divide a signal into blocks.
+    :param s: signal.
+    :return: signal divided into blocks.
+    """
+    one_day = 24 * 60 * 60 // 10
+    s = [s[0:one_day], s[one_day:one_day * 2], s[one_day * 2:]]
+    return s
 
 
 class PreprocessingUtils:

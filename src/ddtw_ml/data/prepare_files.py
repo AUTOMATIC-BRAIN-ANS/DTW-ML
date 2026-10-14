@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 
-from ddtw_ml.common import calculate_cbfv
+from ddtw_ml.core.signal.cbfv import calculate_cbfv
 
 FILE_FORMATS = [
     {

@@ -8,8 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from ddtw_ml.common import check_column_existence, check_path, filter_abp, use_latex
-from ddtw_ml.utils.preprocessing_utils import PreprocessingUtils as prepUtils
+from ddtw_ml.core.signal.artefacts import filter_abp
+from ddtw_ml.core.signal.cleaning import PreprocessingUtils as prepUtils
+from ddtw_ml.utils.plotting import use_latex
+from ddtw_ml.utils.validation import check_column_existence, check_path
 
 
 class PreprocessData:

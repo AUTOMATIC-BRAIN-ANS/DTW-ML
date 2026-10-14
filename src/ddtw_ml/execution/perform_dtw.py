@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 
-from ddtw_ml.dtw.dtw import DTW
+from ddtw_ml.core.dtw import DTW
 
 """data_path = "C:/Python/ZSSI/data2/dtw/preprocessed"
 files = os.listdir(data_path)
