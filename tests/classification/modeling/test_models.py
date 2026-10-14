@@ -5,9 +5,9 @@ Unit tests for classification/modeling/models.py on a synthetic feature matrix.
 import numpy as np
 import pytest
 
-from project.classification.config import MODELS
-from project.classification.modeling.models import ModelFactory
-from project.classification.scoring.classification_metrics import ClassificationMetrics
+from ddtw_ml.classification.config import MODELS
+from ddtw_ml.classification.modeling.models import ModelFactory
+from ddtw_ml.classification.scoring.classification_metrics import ClassificationMetrics
 
 
 class TestModelFactory:

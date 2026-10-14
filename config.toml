@@ -40,97 +40,97 @@ frozen = false
 path = "extracted"
 description = "DateTime (Excel serial), ABP, CBFV, BPM per subject: {condition}/V{i}_{condition}.csv"
 input = ["raw"]
-produced_by = "project.data.prepare_files"
+produced_by = "ddtw_ml.data.prepare_files"
 
 [stages.preprocessed]
 path = "preprocessed"
 description = "Signals after artefact and outlier removal, trimming, interpolation and smoothing: {condition}/..._PP.csv"
 input = ["extracted"]
-produced_by = "project.execution.preprocessing"
+produced_by = "ddtw_ml.execution.preprocessing"
 
 [stages.filtered]
 path = "filtered"
 description = "ABP and CBFV with the breathing frequency removed (FFT): {condition}/..._PP_F.csv"
 input = ["preprocessed"]
-produced_by = "project.execution.filtering"
+produced_by = "ddtw_ml.execution.filtering"
 
 [stages.metrics]
 path = "metrics"
 description = "Beat-to-beat metrics (SPO, SPP, DN, DPP, RR): {condition}/..._PP_F/{ABP,CBFV}.csv"
 input = ["filtered"]
-produced_by = "project.execution.metrics_extraction"
+produced_by = "ddtw_ml.execution.metrics_extraction"
 
 [stages.dtw_raw]
 path = "dtw/raw"
 description = "ABP and CBFV metrics merged into one file: {condition}/..._PP_F_M.csv"
 input = ["metrics"]
-produced_by = "project.other.merging"
+produced_by = "ddtw_ml.other.merging"
 
 [stages.dtw_preprocessed]
 path = "dtw/preprocessed"
 description = "Metrics after outlier removal, interpolation and Generalized Logistic normalisation: {condition}/..._M_PP.csv"
 input = ["dtw_raw"]
-produced_by = "project.execution.preprocessing"
+produced_by = "ddtw_ml.execution.preprocessing"
 
 [stages.dtw_costs]
 path = "dtw/dtw"
 description = "Sliding-window DDTW costs of the ABP-CBFV metric pairs: {method}/{condition}/..._PP_DTW.csv"
 input = ["dtw_preprocessed"]
-produced_by = "project.execution.perform_dtw"
+produced_by = "ddtw_ml.execution.perform_dtw"
 
 [stages.dtw_reorganised]
 path = "dtw/reorganised"
 description = "DTW costs per metric pair, one column per subject: {method}/{condition}/{pair}.csv"
 input = ["dtw_costs"]
-produced_by = "project.other.reorganise"
+produced_by = "ddtw_ml.other.reorganise"
 
 [stages.dtw_summary]
 path = "dtw/summary"
 description = "Mean DTW cost per subject and method_condition: {pair}.csv"
 input = ["dtw_reorganised"]
-produced_by = "project.other.get_summary"
+produced_by = "ddtw_ml.other.get_summary"
 
 [stages.statistics]
 path = "statistics"
 description = "RM-ANOVA and Bonferroni post-hoc results: {pair}/{method}_{anova,posthoc}_results.csv"
 input = ["dtw_summary"]
-produced_by = "project.statistics.statistical_analysis"
+produced_by = "ddtw_ml.statistics.statistical_analysis"
 
 [stages.ml_data]
 path = "ml-data"
 description = "DTW costs prepared for machine learning: {method}/{condition}/{pair}.csv"
 input = ["dtw_reorganised"]
-produced_by = "project.other.get_data_for_ml"
+produced_by = "ddtw_ml.other.get_data_for_ml"
 
 [stages.characteristics]
 path = "characteristics"
 description = "Medians and IQRs of the signals and metrics for the LaTeX tables and RM-ANOVA"
 input = ["extracted", "dtw_raw"]
-produced_by = "project.data.get_data_characteristics"
+produced_by = "ddtw_ml.data.get_data_characteristics"
 
 [stages.classification_features]
 path = "classification/features"
 description = "Feature matrices built from the sliding-window DTW costs: {method}/{pair}.csv"
 input = ["dtw_reorganised"]
-produced_by = "project.classification.feature_extraction.build_feature_matrix"
+produced_by = "ddtw_ml.classification.feature_extraction.build_feature_matrix"
 
 [stages.classification_results]
 path = "classification/results"
 description = "Per-model classification results: {method}/{pair}/{model}/{validation}/"
 input = ["classification_features"]
-produced_by = "project.classification.classify"
+produced_by = "ddtw_ml.classification.classify"
 
 [stages.classification_summary]
 path = "classification/summary"
 description = "Classification metrics collected per model: {model}.csv"
 input = ["classification_results"]
-produced_by = "project.classification.summary.collect_metrics"
+produced_by = "ddtw_ml.classification.summary.collect_metrics"
 
 [stages.spoiled]
 path = "spoiled"
 description = "Files rejected during preprocessing or merging: {condition}/"
 input = []
-produced_by = "project.execution.preprocessing, project.other.merging"
+produced_by = "ddtw_ml.execution.preprocessing, ddtw_ml.other.merging"
 
 # ================================== PLOTS ==================================
 # path: relative to {plots.root}/{version}
@@ -140,22 +140,22 @@ produced_by = "project.execution.preprocessing, project.other.merging"
 path = "preprocessing"
 description = "Signals before and after each preprocessing step: {file}.pdf"
 input = ["extracted"]
-produced_by = "project.data.preprocess_data"
+produced_by = "ddtw_ml.data.preprocess_data"
 
 [plots.signals]
 path = "signals"
 description = "Filtered signals with the detected troughs and beats: {file}.svg"
 input = ["filtered"]
-produced_by = "project.metrics.extract_metrics"
+produced_by = "ddtw_ml.metrics.extract_metrics"
 
 [plots.metrics]
 path = "metrics"
 description = "Beat-to-beat metrics: {file}.pdf; before/after preprocessing: {before_prep,after_prep}/{metric}/{condition}/"
 input = ["metrics", "dtw_raw", "dtw_preprocessed"]
-produced_by = "project.metrics.extract_metrics, project.visualisation.plot_metrics"
+produced_by = "ddtw_ml.metrics.extract_metrics, ddtw_ml.visualisation.plot_metrics"
 
 [plots.dtw_costs]
 path = "dtw/cost_per_window"
 description = "DTW cost per sliding window: {condition}/{method}/{title}.pdf"
 input = ["dtw_costs"]
-produced_by = "project.visualisation.alignment_cost"
+produced_by = "ddtw_ml.visualisation.alignment_cost"

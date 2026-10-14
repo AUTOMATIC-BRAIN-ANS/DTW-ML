@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from project.dtw.dtw import DTW
+from ddtw_ml.dtw.dtw import DTW
 
 
 class TestDTW(unittest.TestCase):

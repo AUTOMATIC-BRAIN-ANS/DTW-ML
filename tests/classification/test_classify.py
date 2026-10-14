@@ -7,7 +7,7 @@ import shutil
 
 import pytest
 
-from project.classification.classify import main
+from ddtw_ml.classification.classify import main
 
 pytestmark = pytest.mark.usefixtures("no_latex")
 

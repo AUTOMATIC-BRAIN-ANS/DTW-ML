@@ -9,8 +9,8 @@ import logging
 import pandas as pd
 import pytest
 
-from project.classification.config import METRIC_NAMES
-from project.classification.summary.collect_metrics import MetricsCollector, main
+from ddtw_ml.classification.config import METRIC_NAMES
+from ddtw_ml.classification.summary.collect_metrics import MetricsCollector, main
 
 LABELS = ["ROC-AUC", "Balanced accuracy", "F1-score", "Precision", "Recall", "PR-AUC",
           "Matthews correlation coefficient", "Geometric mean", "Specificity", "Sensitivity",

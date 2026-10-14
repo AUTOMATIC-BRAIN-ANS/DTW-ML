@@ -7,9 +7,9 @@ import pytest
 from matplotlib.colors import same_color
 from matplotlib.figure import Figure
 
-from project.classification.config import CLASSES
-from project.classification.modeling.cross_validation import CrossValidation
-from project.classification.reporting.visualizer import Visualizer
+from ddtw_ml.classification.config import CLASSES
+from ddtw_ml.classification.modeling.cross_validation import CrossValidation
+from ddtw_ml.classification.reporting.visualizer import Visualizer
 
 pytestmark = pytest.mark.usefixtures("no_latex")
 

@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from project.classification.config import CLASSES, METRIC_NAMES
-from project.classification.scoring.bootstrap import Bootstrap
-from project.classification.scoring.classification_metrics import ClassificationMetrics
+from ddtw_ml.classification.config import CLASSES, METRIC_NAMES
+from ddtw_ml.classification.scoring.bootstrap import Bootstrap
+from ddtw_ml.classification.scoring.classification_metrics import ClassificationMetrics
 
 
 def make_predictions(n_subjects=20, n_runs=1, accuracy=0.7, seed=0):

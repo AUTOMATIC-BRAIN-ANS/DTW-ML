@@ -34,13 +34,13 @@ def matrix_path(tmp_path):
 
 @pytest.fixture
 def data(matrix_path):
-    from project.classification.modeling.data import FeatureMatrixData
+    from ddtw_ml.classification.modeling.data import FeatureMatrixData
     return FeatureMatrixData(str(matrix_path))
 
 
 @pytest.fixture
 def loso_result(data):
-    from project.classification.modeling.cross_validation import CrossValidation
+    from ddtw_ml.classification.modeling.cross_validation import CrossValidation
     return CrossValidation(data, permutation_repeats=2, n_bootstrap=20, n_jobs=1).evaluate("LogReg", "LOSO")
 
 
@@ -57,7 +57,7 @@ def no_latex(monkeypatch):
     Render test figures without LaTeX (not installed in CI); other modules may have switched text.usetex on globally.
     """
     import matplotlib.pyplot as plt
-    monkeypatch.setattr("project.classification.reporting.visualizer.use_latex", lambda: None)
+    monkeypatch.setattr("ddtw_ml.classification.reporting.visualizer.use_latex", lambda: None)
     monkeypatch.setitem(plt.rcParams, "text.usetex", False)
 
 

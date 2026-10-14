@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from project.classification.config import CLASSES, METRIC_NAMES
-from project.classification.modeling.cross_validation import CrossValidation
+from ddtw_ml.classification.config import CLASSES, METRIC_NAMES
+from ddtw_ml.classification.modeling.cross_validation import CrossValidation
 
 
 class TestCrossValidation:

@@ -9,9 +9,9 @@ import re
 import numpy as np
 import pandas as pd
 
-from project.classification.config import CLASSES, METRIC_NAMES
-from project.classification.reporting.reporter import Reporter
-from project.utils.logger import LoggerUtils
+from ddtw_ml.classification.config import CLASSES, METRIC_NAMES
+from ddtw_ml.classification.reporting.reporter import Reporter
+from ddtw_ml.utils.logger import LoggerUtils
 
 TIMESTAMP = re.compile(r"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] \[(INFO|WARNING|ERROR)\] ")
 

@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from project.classification.config import CLASSES, METRIC_NAMES
-from project.classification.scoring.classification_metrics import ClassificationMetrics, get_rates, summarise
+from ddtw_ml.classification.config import CLASSES, METRIC_NAMES
+from ddtw_ml.classification.scoring.classification_metrics import ClassificationMetrics, get_rates, summarise
 
 
 class TestClassificationMetrics:

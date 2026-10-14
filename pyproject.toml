@@ -3,7 +3,7 @@ requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dtw-ml"
+name = "ddtw-ml"
 version = "0.1.0"
 description = "ABP-CBFV analysis under paced breathing."
 requires-python = ">=3.12"
@@ -28,30 +28,15 @@ dev = [
     "scipy-stubs>=1.18.1.1",
 ]
 
-# The repository root is itself the `project` package (code imports `from project.x import ...`),
-# so map it explicitly; `pip install -e .` then makes `project.*` importable from any directory.
-[tool.setuptools]
-package-dir = { "project" = "." }
-packages = [
-    "project",
-    "project.classification",
-    "project.classification.feature_extraction",
-    "project.classification.modeling",
-    "project.classification.reporting",
-    "project.classification.scoring",
-    "project.classification.summary",
-    "project.data",
-    "project.dtw",
-    "project.execution",
-    "project.metrics",
-    "project.other",
-    "project.statistics",
-    "project.utils",
-    "project.visualisation",
-]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.mypy]
 python_version = "3.12"
+files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
 module = ["statsmodels.*", "pingouin.*", "detect_troughs", "sklearn.*", "catboost.*", "joblib.*", "tqdm.*"]
@@ -66,4 +51,4 @@ target-version = "py312"
 select = ["I", "F401"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["project"]
+known-first-party = ["ddtw_ml"]

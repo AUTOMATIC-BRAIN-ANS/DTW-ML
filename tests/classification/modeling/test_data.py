@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from project.classification.config import CLASSES
-from project.classification.modeling.data import FeatureMatrixData
+from ddtw_ml.classification.config import CLASSES
+from ddtw_ml.classification.modeling.data import FeatureMatrixData
 
 
 class TestFeatureMatrixData:

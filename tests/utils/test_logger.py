@@ -5,7 +5,7 @@ Unit tests for utils/logger.py.
 import logging
 import re
 
-from project.utils.logger import LoggerUtils
+from ddtw_ml.utils.logger import LoggerUtils
 
 
 def test_setup_logs_to_file_and_counts_levels(tmp_path):

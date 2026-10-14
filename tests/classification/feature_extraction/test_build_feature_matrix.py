@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from scipy.stats import kurtosis, skew
 
-from project.classification.feature_extraction.build_feature_matrix import (
+from ddtw_ml.classification.feature_extraction.build_feature_matrix import (
     FEATURES,
     CostReader,
     FeatureMatrix,
