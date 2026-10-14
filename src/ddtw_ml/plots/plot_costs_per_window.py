@@ -1,5 +1,7 @@
 """
 @author: Radosław Pławecki
+Plot `costs` (costs -> plots): DTW cost per sliding window of every metric pair, one figure per file:
+{method}/{condition}/{file}.pdf.
 """
 import os
 
@@ -7,22 +9,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from ddtw_ml.pipeline import StageContext
 from ddtw_ml.utils.plotting import use_latex
 
-path = "C:/Python/ZSSI/data_v2/dtw/dtw"
 
-
-def main() -> None:
+def run(ctx: StageContext) -> None:
     use_latex()
-    breaths = os.listdir(path)
-    for breath in breaths:
-        methods = os.listdir(os.path.join(path, breath))
-        for method in methods:
-            files = os.listdir(os.path.join(path, breath, method))
-            for file in files:
+    path = ctx.input()
+    for method in os.listdir(path):
+        for breath in os.listdir(path / method):
+            out_dir = ctx.output(method, breath)
+            for file in os.listdir(path / method / breath):
                 title = os.path.splitext(file)[0]
-                final_path = os.path.join(path, breath, method, file)
-                data = pd.read_csv(final_path, delimiter=';')
+                data = pd.read_csv(path / method / breath / file, delimiter=';')
                 df = pd.DataFrame(data)
                 cols = [col for col in df.columns if col != "Window"]
                 plt.figure(figsize=(12, 6))
@@ -35,10 +34,6 @@ def main() -> None:
                 plt.ylabel("Koszt dopasowania", fontsize=14, labelpad=12)
                 plt.grid()
                 plt.legend()
-                plt.savefig(f"C:/Python/ZSSI/plots/dtw/cost_per_window/{breath}/{method}/{title}.pdf", format='pdf')
+                plt.savefig(out_dir / f"{title}.pdf", format='pdf')
                 plt.close()
-                # plt.show()
-
-
-if __name__ == "__main__":
-    main()
+                ctx.processed(f"{method}/{breath}/{file}")

@@ -18,10 +18,9 @@ SCRIPTS = [
     "ddtw_ml.other.get_data_for_ml",
     "ddtw_ml.other.parse_dot_separated_data",
     "ddtw_ml.statistics.prepare_for_analysis",
-    "ddtw_ml.visualisation.alignment_cost",
-    "ddtw_ml.visualisation.plot_metrics",
 ]
-STAGES = [f"ddtw_ml.stages.{m.name}" for m in pkgutil.iter_modules(importlib.import_module("ddtw_ml.stages").__path__)]
+STAGES = [f"{package}.{m.name}" for package in ("ddtw_ml.stages", "ddtw_ml.plots")
+          for m in pkgutil.iter_modules(importlib.import_module(package).__path__)]
 LEGACY = ["ddtw_ml.other.comma_to_dot", "ddtw_ml.other.parse_dot_separated_data"]
 
 

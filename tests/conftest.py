@@ -1,6 +1,6 @@
 """
-Shared fixtures of the stage tests: the config.toml of the repository with temporary data and plot roots, and the
-context of a stage in version 2.0.
+Shared fixtures of the stage and plot tests: the config.toml of the repository with temporary data and plot roots,
+and the context of a stage in version 2.0.
 """
 
 import logging

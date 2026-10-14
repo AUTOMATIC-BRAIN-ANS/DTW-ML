@@ -171,7 +171,7 @@ class FromSignal:
             plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
             plt.plot([spp_locs[i] - 2.5, spp_locs[i + 1] + 2.5], [50, 50], color="darkolivegreen", linewidth=1.5,
                      label="RR interval", zorder=2)
-            plt.ylabel("CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
+            plt.ylabel(r"CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
         else:
             plt.vlines(x=spp_locs[i], ymin=98.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
             plt.vlines(x=spp_locs[i + 1], ymin=98.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
