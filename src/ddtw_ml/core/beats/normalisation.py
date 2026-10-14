@@ -9,11 +9,14 @@ from ddtw_ml.utils.validation import check_path
 
 
 class PreprocessMetrics:
-    def __init__(self, directory, filename, label=None):
-        self.directory = directory
-        filepath = f"C:/Python/ZSSI/data/dtw/raw/{directory}/{filename}.csv"
+    def __init__(self, filepath, label=None):
+        """
+        Method to initialize params of a class.
+        :param filepath: path of a CSV file with the paired ABP and CBFV metrics.
+        :param label: column of the metric to preprocess.
+        """
         check_path(filepath)
-        self.filename = filename
+        self.filepath = filepath
         data = pd.read_csv(filepath, delimiter=';')
         self.df = df = pd.DataFrame(data)
         if label is not None and label not in df.columns:
@@ -33,27 +36,24 @@ class PreprocessMetrics:
     def get_metric_normalized(self):
         return pd.Series(prepUtils.normalize(self.get_metric_interpolated(), method='generalized-logistic'))
 
-    def export_preprocessed_metrics(self):
+    def get_preprocessed_metrics(self):
         """
-        Method to export preprocessed data.
-        :return: None.
+        Method to get the preprocessed metrics (outliers removed, interpolated, Generalized Logistic normalisation).
+        :return: DateTime and the preprocessed SPO, SPP and RR of ABP and CBFV.
         """
-        print(f"File: {self.filename} being processed...")
         df = self.df
         datetime, abp_spo, abp_spp, abp_rr, cbfv_spo, cbfv_spp, cbfv_rr = ('DateTime', 'ABP_SPO', 'ABP_SPP', 'ABP_RR', 'CBFV_SPO', 'CBFV_SPP', 'CBFV_RR')
         data = {
             datetime: df['DateTime'],
-            abp_spo: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_SPO').get_metric_normalized(),
-            abp_spp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_SPP').get_metric_normalized(),
-            abp_rr: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_RR').get_metric_normalized(),
-            cbfv_spo: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_SPO').get_metric_normalized(),
-            cbfv_spp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_SPP').get_metric_normalized(),
-            cbfv_rr: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_RR').get_metric_normalized()
-            # abp_dn: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_DN').get_metric_normalized(),
-            # abp_dpp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='ABP_DPP').get_metric_normalized(),
-            # cbfv_dn: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_DN').get_metric_normalized(),
-            # cbfv_dpp: PreprocessMetrics(directory=self.directory, filename=self.filename, label='CBFV_DPP').get_metric_normalized()
+            abp_spo: PreprocessMetrics(self.filepath, label='ABP_SPO').get_metric_normalized(),
+            abp_spp: PreprocessMetrics(self.filepath, label='ABP_SPP').get_metric_normalized(),
+            abp_rr: PreprocessMetrics(self.filepath, label='ABP_RR').get_metric_normalized(),
+            cbfv_spo: PreprocessMetrics(self.filepath, label='CBFV_SPO').get_metric_normalized(),
+            cbfv_spp: PreprocessMetrics(self.filepath, label='CBFV_SPP').get_metric_normalized(),
+            cbfv_rr: PreprocessMetrics(self.filepath, label='CBFV_RR').get_metric_normalized()
+            # abp_dn: PreprocessMetrics(self.filepath, label='ABP_DN').get_metric_normalized(),
+            # abp_dpp: PreprocessMetrics(self.filepath, label='ABP_DPP').get_metric_normalized(),
+            # cbfv_dn: PreprocessMetrics(self.filepath, label='CBFV_DN').get_metric_normalized(),
+            # cbfv_dpp: PreprocessMetrics(self.filepath, label='CBFV_DPP').get_metric_normalized()
         }
-        df = pd.DataFrame(data)
-        df.to_csv(f"C:/Python/ZSSI/data/dtw/preprocessed/{self.directory}/{self.filename}_PP.csv", sep=';', index=False)
-        print("Data was exported!")
+        return pd.DataFrame(data)

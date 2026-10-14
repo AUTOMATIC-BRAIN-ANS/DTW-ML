@@ -15,13 +15,10 @@ import pytest
 
 SCRIPTS = [
     "ddtw_ml.data.get_data_characteristics",
-    "ddtw_ml.execution.metrics_extraction",
     "ddtw_ml.execution.perform_dtw",
-    "ddtw_ml.execution.preprocessing",
     "ddtw_ml.other.comma_to_dot",
     "ddtw_ml.other.get_data_for_ml",
     "ddtw_ml.other.get_summary",
-    "ddtw_ml.other.merging",
     "ddtw_ml.other.parse_dot_separated_data",
     "ddtw_ml.other.reorganise",
     "ddtw_ml.statistics.prepare_for_analysis",

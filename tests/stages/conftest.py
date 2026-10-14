@@ -5,11 +5,21 @@ context of a stage in version 2.0.
 
 import logging
 import shutil
+import sys
+import types
 
 import pytest
 
 from ddtw_ml.config import REPO_ROOT, Config, load_config
 from ddtw_ml.pipeline import StageContext
+
+# detect_troughs lives outside the repository (not available in CI); the tests that need troughs patch the function
+try:
+    import detect_troughs  # noqa: F401
+except ImportError:
+    stub = types.ModuleType("detect_troughs")
+    stub.detect_peaks_troughs_optimized = None  # type: ignore[attr-defined]
+    sys.modules["detect_troughs"] = stub
 
 
 @pytest.fixture

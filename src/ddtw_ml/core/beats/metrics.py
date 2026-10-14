@@ -2,11 +2,8 @@
 @author: Radoslaw Plawecki
 """
 
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from detect_troughs import detect_peaks_troughs_optimized
 from scipy.signal import find_peaks
 
@@ -133,11 +130,12 @@ class FromSignal:
             rr.append(spp_locs[i + 1] - spp_locs[i])
         return rr
 
-    def plot_window(self, wd_number=None, file=None):
+    def plot_window(self, wd_number=None, output_path=None):
         """
         Method to plot a specific window from a signal with marked metrics.
+        :param wd_number: number of the window.
+        :param output_path: path of a PDF file to save the plot to (None: not saved).
         """
-        output_path = os.path.join("C:/Python/ZSSI/plots/metrics", f"{file}.pdf")
         signal_type = self.signal_type
 
         use_latex()
@@ -190,15 +188,17 @@ class FromSignal:
         plt.xlim(left=wd_datetime[0], right=wd_datetime[-1])
         plt.legend()
         plt.tight_layout()
-        # plt.savefig(output_path, format="pdf")
+        if output_path is not None:
+            plt.savefig(output_path, format="pdf")
         plt.show()
         plt.close()
 
-    def plot_pulsation(self, wd_number=None, file=None):
+    def plot_pulsation(self, wd_number=None, output_path=None):
         """
         Method to plot a specific pulsation from a signal.
+        :param wd_number: number of the window.
+        :param output_path: path of an SVG file to save the plot to (None: not saved).
         """
-        output_path = os.path.join("C:/Python/ZSSI/plots/signals", f"{file}.svg")
         signal_type = self.signal_type
         use_latex()
         wd = self.wd
@@ -218,7 +218,8 @@ class FromSignal:
             spine.set_color("#191970")
             spine.set_linewidth(16)
         plt.tight_layout()
-        plt.savefig(output_path, format="svg", bbox_inches="tight")
+        if output_path is not None:
+            plt.savefig(output_path, format="svg", bbox_inches="tight")
         plt.show()
         plt.close()
 
@@ -252,16 +253,3 @@ class FromSignal:
             col5: rr
         }
         return data
-
-    def export_to_csv(self, filename, directory):
-        """
-        Method to export metrics to a CSV file.
-        """
-        output_dir = os.path.join("C:/Python/ZSSI/data/metrics", directory)
-        os.makedirs(output_dir, exist_ok=True)
-        data = self.get_metrics()
-        df = pd.DataFrame(data)
-        output_path = f"C:/Python/ZSSI/data/metrics/{directory}"
-        os.makedirs(output_path, exist_ok=True)
-        df.to_csv(f"{output_path}/{filename}", sep=';', index=False)
-        print("Data was exported!")
