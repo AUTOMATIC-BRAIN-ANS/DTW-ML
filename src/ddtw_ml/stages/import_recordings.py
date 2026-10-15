@@ -1,7 +1,8 @@
 """
 Stage `recordings` (raw -> recordings): reads the raw recordings of every condition and writes DateTime, ABP,
 CBFV = max(FV left, FV right) and BPM per subject: {condition}/V{i}_{condition}.csv.
-The subject number i is the position of the raw file in os.listdir (M-03); the mapping is written to the log.
+The subject number i is the position of the raw file in the sorted directory listing (M-03), so it does not depend
+on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the mapping is written to the log.
 """
 
 import os
@@ -19,7 +20,7 @@ def run(ctx: StageContext) -> None:
         if not directory_path.is_dir():
             continue
         out_dir = ctx.output(directory)
-        for i, file in enumerate(os.listdir(directory_path), start=1):
+        for i, file in enumerate(sorted(os.listdir(directory_path)), start=1):
             file_path = directory_path / file
             try:
                 datetime, abp, cbfv, bpm = load_signals(str(file_path))

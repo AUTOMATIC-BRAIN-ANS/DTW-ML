@@ -22,7 +22,8 @@ def run(ctx: StageContext) -> None:
     # baseline first, then the paced conditions in the order of the config
     conditions = sorted(ctx.params["conditions"], key=lambda c: c != "BAS")
     columns = [f"{signal}_{metric}" for metric in ctx.params["metrics"] for signal in ("ABP", "CBFV")]
-    files = {c: os.listdir(input_path / c) for c in conditions}
+    # sorted: the rows of the conditions are joined by position (M-07), os.listdir order depends on the file system
+    files = {c: sorted(os.listdir(input_path / c)) for c in conditions}
     allowed_ids = set.intersection(*({subject_id(f) for f in fs} for fs in files.values()))
     per_condition = []
     for condition in conditions:
