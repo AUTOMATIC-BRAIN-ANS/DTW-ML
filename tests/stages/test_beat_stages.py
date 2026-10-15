@@ -2,8 +2,12 @@
 Tests of the beat stages (beats, paired, normalised) on small synthetic data.
 """
 
+import math
+
 import numpy as np
 import pandas as pd
+import pytest
+from scipy import signal as sp_sig
 from scipy.signal import find_peaks
 
 from ddtw_ml.stages.beats import ComputeBeatMetrics
@@ -14,6 +18,44 @@ from ddtw_ml.stages.paired import PairBeatMetrics
 
 METRICS = ["DateTime", "ABP_SPO", "ABP_SPP", "ABP_DN", "ABP_DPP", "ABP_RR",
            "CBFV_SPO", "CBFV_SPP", "CBFV_DN", "CBFV_DPP", "CBFV_RR"]
+
+
+def original_troughs(signal, max_scale=0):
+    """
+    The original implementation (C:/Python/ZSSI/detect_troughs.py, N x L matrices), the reference for the troughs.
+    """
+    N = len(signal)
+    signal = np.nan_to_num(signal, nan=np.nanmean(signal))
+    d_signal = sp_sig.detrend(signal, type='linear')
+    L = math.ceil(max_scale / 2) - 1 if max_scale != 0 else math.ceil(N / 2) - 1
+    Mn = np.zeros((N, L), dtype=bool)
+    for k in range(1, L + 1):
+        center = d_signal[k:-k]
+        Mn[np.arange(k, N - k), k - 1] = (center < d_signal[:-2*k]) & (center < d_signal[2*k:])
+    dn = np.argmax(np.sum(Mn, axis=0))
+    Mn = Mn[:, :dn + 1]
+    return np.where(np.sum(Mn == 0, axis=1) == 0)[0]
+
+
+@pytest.mark.parametrize("seed", range(6))
+@pytest.mark.parametrize("max_scale", [0, 40, 401])
+def test_troughs_match_the_original_implementation(seed, max_scale):
+    rng = np.random.default_rng(seed)
+    n = int(rng.integers(50, 4000))
+    t = np.arange(n) / 200
+    s = (90 + 15 * np.sin(2 * np.pi * rng.uniform(0.8, 2) * t) + 3 * np.sin(2 * np.pi * 0.1 * t)
+         + rng.normal(0, rng.uniform(0.01, 3), n))
+    s[rng.integers(0, n, 5)] = np.nan
+    if seed == 0:
+        s = np.round(s)  # equal neighbours and equal trough counts at several scales
+    assert np.array_equal(detect_peaks_troughs_optimized(s, max_scale), original_troughs(s, max_scale))
+
+
+def test_troughs_need_at_least_one_scale():
+    with pytest.raises(ValueError):
+        detect_peaks_troughs_optimized(np.array([1.0, 2.0]))
+    with pytest.raises(ValueError):
+        original_troughs(np.array([1.0, 2.0]))
 
 
 def test_troughs_are_the_minima_of_a_periodic_signal():

@@ -24,7 +24,9 @@ class FromSignal:
             raise ValueError(f"Unsupported signal type: {signal_type}!")
         self.datetime = np.array(datetime)
         self.signal = np.array(signal)
-        self.trh, self.wd = self.get_troughs(), self.get_windows()
+        # the windows are the troughs; get_windows() would detect them a second time (P-01)
+        self.trh = self.get_troughs()
+        self.wd = self.trh.copy()
 
     def get_troughs(self):
         """
