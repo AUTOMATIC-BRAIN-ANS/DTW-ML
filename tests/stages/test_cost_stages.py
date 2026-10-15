@@ -1,11 +1,16 @@
 """
-Tests of the DTW cost stages (costs, pairs, mean_costs, anova), run in sequence on small synthetic metrics.
+Tests of the DTW cost stages (aligned, costs, pairs, mean_costs, anova), run in sequence on small synthetic metrics.
 """
+
+import shutil
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from ddtw_ml.pipeline import PipelineError
+from ddtw_ml.pipeline.spoiled import FAILURES_FILE
+from ddtw_ml.stages.aligned import AlignSubjects
 from ddtw_ml.stages.anova import CompareConditions
 from ddtw_ml.stages.costs import ComputeDtwCosts
 from ddtw_ml.stages.costs.dtw import DTW
@@ -29,8 +34,37 @@ def normalised(config):
     return config
 
 
+def test_align_subjects_keeps_the_subjects_of_all_conditions(normalised, make_ctx):
+    config = normalised
+    # V2 rejected earlier in B10, V3 in B10 and BAS
+    (config.stage_dir("normalised") / "B10" / "V2_B10_PP_F_M_PP.csv").unlink()
+    (config.stage_dir("normalised") / "B10" / "V3_B10_PP_F_M_PP.csv").unlink()
+    (config.stage_dir("normalised") / "BAS" / "V3_BAS_PP_F_M_PP.csv").unlink()
+    ctx = make_ctx("aligned")
+    AlignSubjects(ctx).run()
+    for condition in CONDITIONS:
+        kept = sorted(f.name for f in (config.stage_dir("aligned") / condition).iterdir())
+        assert kept == [f"V1_{condition}_PP_F_M_PP.csv", f"V4_{condition}_PP_F_M_PP.csv"]
+        src = config.stage_dir("normalised") / condition / kept[0]
+        assert (config.stage_dir("aligned") / condition / kept[0]).read_bytes() == src.read_bytes()
+    spoiled = config.spoiled_dir() / "B6" / "aligning_data"
+    assert sorted(f.name for f in spoiled.iterdir()) == ["V2_B6_PP_F_M_PP.csv", "V3_B6_PP_F_M_PP.csv", FAILURES_FILE]
+    assert "subject V3 is missing from B10, BAS" in (spoiled / FAILURES_FILE).read_text(encoding="utf-8")
+    assert not (config.spoiled_dir() / "B10" / "aligning_data").exists()
+    assert len(ctx.report.rejected) == 2 + 0 + 2 + 1  # B6, B10, B15, BAS
+    # the input is left in place
+    assert (config.stage_dir("normalised") / "B6" / "V2_B6_PP_F_M_PP.csv").exists()
+
+
+def test_align_subjects_needs_every_condition(normalised, make_ctx):
+    shutil.rmtree(normalised.stage_dir("normalised") / "B15")
+    with pytest.raises(PipelineError, match="B15"):
+        AlignSubjects(make_ctx("aligned")).run()
+
+
 def test_cost_stages_in_sequence(normalised, make_ctx, settings):
     config = normalised
+    AlignSubjects(make_ctx("aligned")).run()
     ComputeDtwCosts(make_ctx("costs")).run()
     costs_file = config.stage_dir("costs") / "td-method" / "B6" / "V1_B6_PP_F_M_PP_DTW.csv"
     costs = pd.read_csv(costs_file, sep=";")

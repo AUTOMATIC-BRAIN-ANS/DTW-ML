@@ -67,6 +67,9 @@ max_beats_rejected = 10
 [stages.normalised]
 enabled = true
 
+[stages.aligned]
+enabled = true
+
 [stages.costs]
 enabled = true
 # sliding window of the DDTW alignment cost: length and step [beats]

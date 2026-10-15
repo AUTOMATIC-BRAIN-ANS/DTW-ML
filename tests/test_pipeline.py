@@ -398,8 +398,8 @@ def test_run_needs_no_input(tmp_path):
     result = subprocess.run([sys.executable, str(REPO_ROOT / "main.py")], stdin=subprocess.DEVNULL, capture_output=True,
                             text=True, timeout=120, env=env)
     assert result.returncode == 0, result.stderr
-    # the 15 stages and the 3 plots (all enabled here)
-    assert "18 would run, 0 skipped" in result.stderr
+    # the 16 stages and the 3 plots (all enabled here)
+    assert "19 would run, 0 skipped" in result.stderr
     assert not (tmp_path / "data").exists()
 
 

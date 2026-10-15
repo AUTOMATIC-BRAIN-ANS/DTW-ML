@@ -40,7 +40,9 @@ cleaned = "preprocessed"
 filtered = "filtered"
 beats = "metrics"
 paired = "dtw/raw"
+# normalised and aligned: version 1.0 kept only the aligned files (the removed subjects are in spoiled/{B}/aligning_data)
 normalised = "dtw/preprocessed"
+aligned = "dtw/preprocessed"
 costs = "dtw/dtw"
 pairs = "dtw/reorganised"
 mean_costs = "dtw/summary"
@@ -88,9 +90,14 @@ description = "Metrics after outlier removal, interpolation and Generalized Logi
 input = ["paired"]
 class = "ddtw_ml.stages.normalised.NormaliseBeatMetrics"
 
+[stages.aligned]
+description = "Normalised metrics of the subjects present in all conditions (the others to spoiled/{condition}/aligning_data): {condition}/..._M_PP.csv"
+input = ["normalised"]
+class = "ddtw_ml.stages.aligned.AlignSubjects"
+
 [stages.costs]
 description = "Sliding-window DDTW costs of the ABP-CBFV metric pairs: {method}/{condition}/..._PP_DTW.csv"
-input = ["normalised"]
+input = ["aligned"]
 class = "ddtw_ml.stages.costs.ComputeDtwCosts"
 
 [stages.pairs]
