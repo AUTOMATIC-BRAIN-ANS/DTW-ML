@@ -4,11 +4,11 @@ Tests of the beat stages (beats, paired, normalised) on small synthetic data.
 
 import numpy as np
 import pandas as pd
-import pytest
 from scipy.signal import find_peaks
 
 from ddtw_ml.stages.beats import ComputeBeatMetrics
 from ddtw_ml.stages.beats.metrics import FromSignal
+from ddtw_ml.stages.beats.troughs import detect_peaks_troughs_optimized
 from ddtw_ml.stages.normalised import NormaliseBeatMetrics, PreprocessMetrics
 from ddtw_ml.stages.paired import PairBeatMetrics
 
@@ -16,16 +16,25 @@ METRICS = ["DateTime", "ABP_SPO", "ABP_SPP", "ABP_DN", "ABP_DPP", "ABP_RR",
            "CBFV_SPO", "CBFV_SPP", "CBFV_DN", "CBFV_DPP", "CBFV_RR"]
 
 
-@pytest.fixture
-def simple_troughs(monkeypatch):
-    """
-    Troughs as the minima of the signal at least 0.5 s apart, instead of detect_troughs (outside the repository).
-    """
-    monkeypatch.setattr("ddtw_ml.stages.beats.metrics.detect_peaks_troughs_optimized",
-                        lambda s: find_peaks(-np.asarray(s), distance=100)[0])
+def test_troughs_are_the_minima_of_a_periodic_signal():
+    # 1.2 Hz at 200 Hz: a minimum every 1/1.2 s (~167 samples); minima closer to the ends than about half a period
+    # have no neighbour at the larger scales and are not found
+    t = np.arange(3000) / 200
+    troughs = detect_peaks_troughs_optimized(np.sin(2 * np.pi * 1.2 * t) + 0.01 * t)
+    minima = find_peaks(-np.sin(2 * np.pi * 1.2 * t))[0]
+    expected = minima[(minima >= 84) & (minima < 3000 - 84)]
+    assert len(troughs) == len(expected)
+    assert np.abs(troughs - expected).max() <= 1
 
 
-def test_compute_beat_metrics(config, make_ctx, simple_troughs):
+def test_troughs_ignore_nans():
+    s = np.sin(2 * np.pi * 1.2 * np.arange(2000) / 200)
+    with_nan = s.copy()
+    with_nan[10] = np.nan
+    assert list(detect_peaks_troughs_optimized(with_nan)) == list(detect_peaks_troughs_optimized(s))
+
+
+def test_compute_beat_metrics(config, make_ctx):
     src = config.stage_dir("filtered") / "B6"
     src.mkdir(parents=True)
     t = np.arange(3000) / 200

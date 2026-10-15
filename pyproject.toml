@@ -41,7 +41,7 @@ python_version = "3.12"
 files = ["main.py", "src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["statsmodels.*", "pingouin.*", "detect_troughs", "sklearn.*", "catboost.*", "joblib.*", "tqdm.*"]
+module = ["statsmodels.*", "pingouin.*", "sklearn.*", "catboost.*", "joblib.*", "tqdm.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

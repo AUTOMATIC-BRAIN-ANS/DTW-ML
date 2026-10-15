@@ -4,10 +4,10 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from detect_troughs import detect_peaks_troughs_optimized
 from scipy.signal import find_peaks
 
 from ddtw_ml.plotting import use_latex
+from ddtw_ml.stages.beats.troughs import detect_peaks_troughs_optimized
 
 
 class FromSignal:

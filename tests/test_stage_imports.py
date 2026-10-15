@@ -8,7 +8,6 @@ import importlib
 import os
 import shutil
 import sys
-import types
 
 import pandas as pd
 import pytest
@@ -39,15 +38,12 @@ def modules() -> list[str]:
 @pytest.fixture
 def no_data_access(monkeypatch):
     """
-    Any access to the data fails the test; detect_troughs (outside the repository) is replaced with a stub.
+    Any access to the data fails the test.
     """
     # pingouin reads its own dataset list with pandas on import
     importlib.import_module("pingouin")
     monkeypatch.setattr(os, "listdir", fail)
     monkeypatch.setattr(pd, "read_csv", fail)
-    stub = types.ModuleType("detect_troughs")
-    stub.detect_peaks_troughs_optimized = fail  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "detect_troughs", stub)
 
 
 @pytest.mark.parametrize("node", nodes(), ids=lambda node: f"{node.kind}:{node.key}")

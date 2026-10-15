@@ -394,10 +394,7 @@ def test_run_needs_no_input(tmp_path):
     assert "dry_run = false" in text
     text = text.replace("dry_run = false", "dry_run = true").replace("enabled = false", "enabled = true")
     (tmp_path / "settings.toml").write_text(text, encoding="utf-8")
-    # detect_troughs lives outside the repository (imported by the stage beats)
-    (tmp_path / "stub").mkdir()
-    (tmp_path / "stub" / "detect_troughs.py").write_text("detect_peaks_troughs_optimized = None\n", encoding="utf-8")
-    env = {**os.environ, CONFIG_ENV: str(tmp_path / "config.toml"), "PYTHONPATH": str(tmp_path / "stub")}
+    env = {**os.environ, CONFIG_ENV: str(tmp_path / "config.toml")}
     result = subprocess.run([sys.executable, str(REPO_ROOT / "main.py")], stdin=subprocess.DEVNULL, capture_output=True,
                             text=True, timeout=120, env=env)
     assert result.returncode == 0, result.stderr
@@ -408,10 +405,10 @@ def test_run_needs_no_input(tmp_path):
 
 def test_an_import_error_of_a_stage_is_reported(config, calls, capsys, monkeypatch):
     def broken(name, *args, **kwargs):
-        raise ModuleNotFoundError("No module named 'detect_troughs'")
+        raise ModuleNotFoundError("No module named 'missing_dependency'")
 
     monkeypatch.setattr("ddtw_ml.pipeline.registry.importlib.import_module", broken)
     assert main([]) == 1
-    assert ("Module 'fake_stages.first' of stage 'first' cannot be imported: No module named 'detect_troughs' (install"
+    assert ("Module 'fake_stages.first' of stage 'first' cannot be imported: No module named 'missing_dependency' (install"
             in capsys.readouterr().err)
     assert calls == []
