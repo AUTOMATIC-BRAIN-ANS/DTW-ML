@@ -16,6 +16,7 @@ env:
 
 jobs:
   lint:
+    name: Ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,6 +30,7 @@ jobs:
         run: ruff check --output-format=github .
 
   typecheck:
+    name: Mypy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,6 +44,7 @@ jobs:
         run: mypy
 
   test:
+    name: Pytest (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
