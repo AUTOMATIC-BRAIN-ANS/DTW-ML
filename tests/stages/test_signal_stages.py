@@ -5,9 +5,10 @@ Tests of the signal stages (recordings, cleaned, filtered) on small synthetic re
 import numpy as np
 import pandas as pd
 
-from ddtw_ml.core.signal.breathing_filter import remove_freq
-from ddtw_ml.core.signal.cleaning_chain import PreprocessData
-from ddtw_ml.stages import clean_signals, import_recordings, remove_breathing
+from ddtw_ml.stages.cleaned import CleanSignals
+from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
+from ddtw_ml.stages.filtered import RemoveBreathing, remove_freq
+from ddtw_ml.stages.recordings import ImportRecordings
 
 FS = 200
 
@@ -35,7 +36,7 @@ def test_import_recordings_numbers_subjects_and_rejects_unknown_formats(config, 
                   "abp_finger[abp_finger]": s["ABP"], "rr[rr]": s["BPM"]}).to_csv(raw / "PAC_1.csv", index=False)
     (raw / "PAC_2.csv").write_text("unknown;columns\n1;2\n", encoding="utf-8")
     ctx = make_ctx("recordings")
-    import_recordings.run(ctx)
+    ImportRecordings(ctx).run()
     out = pd.read_csv(config.stage_dir("recordings") / "B6" / "V1_B6.csv", sep=";")
     assert list(out.columns) == ["DateTime", "ABP", "CBFV", "BPM"]
     # CBFV is the larger of the two flow velocities
@@ -50,7 +51,7 @@ def test_clean_signals_writes_the_preprocessed_data(config, make_ctx):
     src = config.stage_dir("recordings") / "B10"
     src.mkdir(parents=True)
     synthetic_signals().to_csv(src / "V1_B10.csv", sep=";", index=False)
-    clean_signals.run(make_ctx("cleaned"))
+    CleanSignals(make_ctx("cleaned")).run()
     out = pd.read_csv(config.stage_dir("cleaned") / "B10" / "V1_B10_PP.csv", sep=";")
     expected = PreprocessData(str(src / "V1_B10.csv"), "ABP", "CBFV", "BPM").get_preprocessed_data()
     pd.testing.assert_frame_equal(out, expected, check_exact=False, rtol=1e-12)
@@ -61,7 +62,7 @@ def test_remove_breathing_uses_the_paced_rate(config, make_ctx):
     src.mkdir(parents=True)
     signals = synthetic_signals()
     signals.to_csv(src / "V1_B6_PP.csv", sep=";", index=False)
-    remove_breathing.run(make_ctx("filtered"))
+    RemoveBreathing(make_ctx("filtered")).run()
     out = pd.read_csv(config.stage_dir("filtered") / "B6" / "V1_B6_PP_F.csv", sep=";")
     assert list(out.columns) == ["DateTime", "ABP", "CBFV"]
     signals = pd.read_csv(src / "V1_B6_PP.csv", sep=";")

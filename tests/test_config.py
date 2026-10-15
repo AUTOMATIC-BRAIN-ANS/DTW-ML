@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from ddtw_ml.config import REPO_ROOT, ConfigError, load_config, merge
+from ddtw_ml.config import REPO_ROOT, ConfigError, load_config, load_settings, merge
 
 BASE = """
 [data]
@@ -21,23 +21,20 @@ frozen = true
 first = "old_first"
 [versions."2.0"]
 
-[run]
-conditions = ["B6", "BAS"]
-
 [stages.second]
 input = ["first"]
-module = "m.second"
+class = "m.second.Second"
 [stages.first]
 input = ["raw"]
-module = "m.first"
+class = "m.first.First"
 [stages.third]
 input = ["first", "second"]
-module = "m.third"
+class = "m.third.Third"
 path = "nested/third"
 
 [plots.overview]
 input = ["third"]
-module = "m.overview"
+class = "m.overview.Overview"
 """
 
 
@@ -63,7 +60,6 @@ def test_paths_of_stages_versions_and_plots(tmp_path):
     assert config.spoiled_dir() == data / "2.0" / "spoiled"
     assert config.plot_dir("overview", "1.0") == tmp_path / "plots" / "1.0" / "overview"
     assert config.get_version("1.0").frozen and not config.get_version().frozen
-    assert config.run["conditions"] == ["B6", "BAS"]
 
 
 def test_order_follows_inputs_then_file_order(tmp_path):
@@ -83,7 +79,7 @@ def test_local_config_is_required_for_the_roots(tmp_path):
     (('first = "old_first"', 'fourth = "old"'), "unknown stages"),
     (('input = ["first", "second"]', 'input = ["missing"]'), "unknown inputs"),
     (('input = ["raw"]', 'input = ["third"]'), "cycle"),
-    (('module = "m.second"', ''), "Missing 'module'"),
+    (('class = "m.second.Second"', ''), "Missing 'class'"),
 ])
 def test_invalid_configurations(tmp_path, change, message):
     old, new = change
@@ -112,3 +108,84 @@ def test_repository_config_is_valid(tmp_path):
     # version 1.0 keeps the directories from before the refactoring
     assert config.stage_dir("costs", "1.0") == tmp_path / "data" / "1.0" / "dtw" / "dtw"
     assert config.stage_dir("costs", "2.0") == tmp_path / "data" / "2.0" / "costs"
+
+
+def test_missing_local_config_says_how_to_create_it(tmp_path):
+    path = write_config(tmp_path)
+    (tmp_path / "config.local.toml").unlink()
+    with pytest.raises(ConfigError, match="copy config.local.example.toml to config.local.toml"):
+        load_config(path)
+
+
+SETTINGS = '''
+[pipeline]
+force = false
+dry_run = true
+[pipeline.logging]
+level = "WARNING"
+
+[analysis]
+conditions = ["B6", "BAS"]
+methods = ["d-method"]
+pairs = ["ABP_RR-CBFV_RR"]
+metrics = ["RR"]
+
+[stages.first]
+enabled = true
+window = 10
+[stages.second]
+enabled = false
+[stages.third]
+enabled = true
+
+[plots.overview]
+enabled = false
+'''
+
+
+def write_settings(tmp_path: Path, text: str = SETTINGS) -> Path:
+    path = write_config(tmp_path)
+    (tmp_path / "settings.toml").write_text(text, encoding="utf-8")
+    return path
+
+
+def test_settings(tmp_path):
+    path = write_settings(tmp_path)
+    config = load_config(path)
+    settings = load_settings(config, path)
+    assert settings.dry_run and not settings.force and settings.log_level == "WARNING"
+    assert settings.analysis["conditions"] == ["B6", "BAS"]
+    assert settings.enabled(config.stages["first"]) and not settings.enabled(config.stages["second"])
+    assert not settings.enabled(config.plots["overview"])
+    # the parameters of a stage: its section without "enabled"
+    assert settings.params(config.stages["first"]) == {"window": 10}
+    assert settings.params(config.stages["third"]) == {}
+
+
+def test_settings_are_required(tmp_path):
+    path = write_config(tmp_path)
+    with pytest.raises(ConfigError, match="settings.toml not found"):
+        load_settings(load_config(path), path)
+
+
+@pytest.mark.parametrize("change, message", [
+    (("force = false", "force = 1"), "'force' must be true or false"),
+    (("force = false", ""), r"missing setting\(s\) \['force'\]"),
+    (("dry_run = true", "dryrun = true"), r"missing setting\(s\) \['dry_run'\]; unknown setting\(s\) \['dryrun'\]"),
+    (('level = "WARNING"', 'level = "LOUD"'), "'level' must be one of"),
+    (('methods = ["d-method"]', 'methods = []'), "'methods' must be a non-empty list"),
+    (('metrics = ["RR"]', ''), r"missing setting\(s\) \['metrics'\]"),
+    (("[stages.third]\nenabled = true", ""), r"missing section\(s\) \['stages.third'\]"),
+    (("[stages.third]", "[stages.fourth]"),
+     r"missing section\(s\) \['stages.third'\]; unknown section\(s\) \['stages.fourth'\]"),
+    (("[stages.second]\nenabled = false", '[stages.second]\nenabled = "no"'), "'enabled' must be true or false"),
+    (("[plots.overview]", "[plots.summary]"),
+     r"missing section\(s\) \['plots.overview'\]; unknown section\(s\) \['plots.summary'\]"),
+    (("force = false", "force = "), "not valid TOML"),
+])
+def test_invalid_settings(tmp_path, change, message):
+    old, new = change
+    assert old in SETTINGS
+    path = write_settings(tmp_path, SETTINGS.replace(old, new, 1))
+    with pytest.raises(ConfigError, match=message):
+        load_settings(load_config(path), path)

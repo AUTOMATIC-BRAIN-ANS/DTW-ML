@@ -6,8 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ddtw_ml.core.dtw import DTW
-from ddtw_ml.stages import average_costs_per_subject, compare_conditions, compute_dtw_costs, group_costs_by_pair
+from ddtw_ml.stages.anova import CompareConditions
+from ddtw_ml.stages.costs import ComputeDtwCosts
+from ddtw_ml.stages.costs.dtw import DTW
+from ddtw_ml.stages.mean_costs import AverageCostsPerSubject
+from ddtw_ml.stages.pairs import GroupCostsByPair
 
 CONDITIONS = ["B6", "B10", "B15", "BAS"]
 SUBJECTS = 4
@@ -26,29 +29,29 @@ def normalised(config):
     return config
 
 
-def test_cost_stages_in_sequence(normalised, make_ctx):
+def test_cost_stages_in_sequence(normalised, make_ctx, settings):
     config = normalised
-    compute_dtw_costs.run(make_ctx("costs"))
+    ComputeDtwCosts(make_ctx("costs")).run()
     costs_file = config.stage_dir("costs") / "td-method" / "B6" / "V1_B6_PP_F_M_PP_DTW.csv"
     costs = pd.read_csv(costs_file, sep=";")
-    assert list(costs.columns) == ["Window"] + config.run["pairs"]
+    assert list(costs.columns) == ["Window"] + settings.analysis["pairs"]
     source = pd.read_csv(config.stage_dir("normalised") / "B6" / "V1_B6_PP_F_M_PP.csv", sep=";")
     expected, _, _ = DTW(source["ABP_RR"], source["CBFV_SPP"], var="DDTW").sliding_window_dtw(10, 5, "td-method")
     np.testing.assert_allclose(costs["ABP_RR-CBFV_SPP"], expected)
     assert (config.stage_dir("costs") / "d-method" / "BAS" / "V4_BAS_PP_F_M_PP_DTW.csv").exists()
 
-    group_costs_by_pair.run(make_ctx("pairs"))
+    GroupCostsByPair(make_ctx("pairs")).run()
     pairs = pd.read_csv(config.stage_dir("pairs") / "td-method" / "B6" / "ABP_RR-CBFV_SPP.csv", sep=";")
     assert sorted(pairs.columns) == [f"V{v}" for v in range(1, SUBJECTS + 1)]
     np.testing.assert_allclose(pairs["V1"], expected)
 
-    average_costs_per_subject.run(make_ctx("mean_costs"))
+    AverageCostsPerSubject(make_ctx("mean_costs")).run()
     means = pd.read_csv(config.stage_dir("mean_costs") / "ABP_RR-CBFV_SPP.csv", sep=";", index_col=0)
     assert sorted(means.columns) == sorted(f"{m}_{c}" for m in ["td-method", "d-method"] for c in CONDITIONS)
     assert means.loc["V1", "td-method_B6"] == pytest.approx(np.mean(expected))
 
-    compare_conditions.run(make_ctx("anova"))
-    for pair in config.run["pairs"]:
+    CompareConditions(make_ctx("anova")).run()
+    for pair in settings.analysis["pairs"]:
         for method in ["td-method", "d-method"]:
             anova = pd.read_csv(config.stage_dir("anova") / pair / f"{method}_anova_results.csv", sep=";")
             posthoc = pd.read_csv(config.stage_dir("anova") / pair / f"{method}_posthoc_results.csv", sep=";")

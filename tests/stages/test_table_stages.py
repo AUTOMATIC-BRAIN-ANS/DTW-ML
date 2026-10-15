@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ddtw_ml.stages import compare_metric_medians, tabulate_medians
+from ddtw_ml.stages.metric_anova import CompareMetricMedians
+from ddtw_ml.stages.tables import TabulateMedians
 
 CONDITIONS = ["B6", "B10", "B15", "BAS"]
 COLUMNS = ["ABP_SPO", "ABP_SPP", "ABP_RR", "CBFV_SPO", "CBFV_SPP", "CBFV_RR"]
@@ -30,7 +31,7 @@ def write_paired(config):
 
 def test_tables_and_metric_anova(config, make_ctx):
     write_paired(config)
-    tabulate_medians.run(make_ctx("tables"))
+    TabulateMedians(make_ctx("tables")).run()
     medians = pd.read_csv(config.stage_dir("tables") / "metrics_for_anova.csv", sep=";", index_col=0)
     # only the subjects present in all conditions; baseline first
     assert len(medians) == 6
@@ -42,7 +43,7 @@ def test_tables_and_metric_anova(config, make_ctx):
     assert list(table.index) == ["BAS", "B6", "B10", "B15"]
     assert "\\text{-}" in table.loc["B6", "ABP_RR"] and "\t" not in table.loc["B6", "ABP_RR"]
 
-    compare_metric_medians.run(make_ctx("metric_anova"))
+    CompareMetricMedians(make_ctx("metric_anova")).run()
     out = config.stage_dir("metric_anova")
     assert sorted(p.name for p in out.glob("*_anova.csv")) == sorted(
         f"{s}_{m}_anova.csv" for s in ("ABP", "CBFV") for m in ("SPO", "SPP", "RR"))

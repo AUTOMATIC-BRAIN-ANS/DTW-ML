@@ -1,0 +1,132 @@
+# Settings of the pipeline: how it runs, the parameters of the analysis and of every stage and plot.
+#
+# Run the whole pipeline with:
+#     python main.py
+# The values below give the results of the study; a change of a parameter changes the results, so commit it.
+# Not set here: the paths of the data and plots (config.local.toml), the stages, their inputs and order and the data
+# versions (config.toml). Every stage and plot of config.toml has a section here; all keys are required.
+
+[pipeline]
+# Run the enabled stages again even if they are done (a done stage: its output exists and its inputs did not run
+# after it); their output files are written again.
+force = false
+# Only show which stages would run and which would be skipped; compute and write nothing.
+dry_run = false
+
+[pipeline.logging]
+# DEBUG, INFO, WARNING or ERROR; the log goes to the console and to {data root}/{version}/pipeline.log.
+level = "INFO"
+
+# ================================ ANALYSIS =================================
+# Shared by several stages.
+
+[analysis]
+# breathing conditions: directories of the raw data (BAS = baseline)
+conditions = ["B6", "B10", "B15", "BAS"]
+# methods of the DTW alignment cost
+methods = ["td-method", "d-method"]
+# ABP-CBFV pairs of the beat-to-beat metrics compared with DTW
+pairs = [
+    "ABP_SPO-CBFV_SPO",
+    "ABP_SPP-CBFV_SPP",
+    "ABP_SPO-CBFV_SPP",
+    "ABP_SPP-CBFV_SPO",
+    "ABP_RR-CBFV_SPO",
+    "ABP_RR-CBFV_SPP",
+    "ABP_SPO-CBFV_RR",
+    "ABP_SPP-CBFV_RR",
+    "ABP_RR-CBFV_RR",
+]
+# beat-to-beat metrics compared between the conditions (medians per subject)
+metrics = ["SPO", "SPP", "RR"]
+
+# ================================= STAGES ==================================
+# enabled: run the stage in python main.py (a disabled stage is not run; the stages after it need its output).
+
+[stages.recordings]
+enabled = true
+
+[stages.cleaned]
+enabled = true
+
+[stages.filtered]
+enabled = true
+# sampling frequency of the signals [Hz]
+fs = 200
+# breaths per minute of the paced conditions; in the other conditions (BAS): the mean recorded BPM
+paced_breaths = { B6 = 6, B10 = 10, B15 = 15 }
+
+[stages.beats]
+enabled = true
+
+[stages.paired]
+enabled = true
+# subjects with at most this many paired beats are rejected (copied to the spoiled data)
+max_beats_rejected = 10
+
+[stages.normalised]
+enabled = true
+
+[stages.costs]
+enabled = true
+# sliding window of the DDTW alignment cost: length and step [beats]
+window_size = 10
+step = 5
+
+[stages.pairs]
+enabled = true
+
+[stages.mean_costs]
+enabled = true
+
+[stages.anova]
+enabled = true
+
+[stages.tables]
+enabled = true
+
+[stages.metric_anova]
+enabled = true
+# the paired post-hoc t-tests are made if the RM-ANOVA p-value is below this level
+alpha = 0.05
+
+[stages.features]
+enabled = true
+
+[stages.cv_results]
+enabled = true
+# models: LogReg, RandomForest, CatBoost, SVM-RBF, HistGradBoost
+models = ["LogReg", "RandomForest", "CatBoost", "SVM-RBF", "HistGradBoost"]
+# validation schemes: LOSO (leave one subject out), RepeatedSGKF (repeated stratified group 5-fold)
+validations = ["LOSO", "RepeatedSGKF"]
+# conditions to classify (of BAS, B6, B10, B15)
+classes = ["BAS", "B6", "B10", "B15"]
+# repeats of RepeatedSGKF
+n_repeats = 10
+# shuffles per feature in the permutation importance
+permutation_repeats = 10
+# bootstrap resamples and level of the confidence intervals
+n_bootstrap = 1000
+ci_level = 0.95
+random_state = 42
+# parallel jobs (-1 = all cores)
+n_jobs = -1
+
+[stages.scores]
+enabled = true
+# one table per model; its columns: "{method} | {pair} | {validation}", methods first, in this order
+methods = ["d-method", "td-method"]
+models = ["LogReg", "RandomForest", "CatBoost", "SVM-RBF", "HistGradBoost"]
+validations = ["LOSO", "RepeatedSGKF"]
+
+# ================================== PLOTS ==================================
+# enabled: make the plot after the stages in python main.py (needs LaTeX); python main.py run --plots makes all.
+
+[plots.cleaning]
+enabled = false
+
+[plots.beats]
+enabled = false
+
+[plots.costs]
+enabled = false

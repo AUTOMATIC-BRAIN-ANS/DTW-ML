@@ -33,10 +33,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# main.py (the entry point) lives in the repository root
+pythonpath = ["."]
 
 [tool.mypy]
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["main.py", "src", "tests"]
 
 [[tool.mypy.overrides]]
 module = ["statsmodels.*", "pingouin.*", "detect_troughs", "sklearn.*", "catboost.*", "joblib.*", "tqdm.*"]
