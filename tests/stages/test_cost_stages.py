@@ -20,6 +20,8 @@ from ddtw_ml.stages.pairs import GroupCostsByPair
 CONDITIONS = ["B6", "B10", "B15", "BAS"]
 SUBJECTS = 4
 COLUMNS = ["DateTime", "ABP_SPO", "ABP_SPP", "ABP_RR", "CBFV_SPO", "CBFV_SPP", "CBFV_RR"]
+COST_PAIRS = ["ABP_SPO-CBFV_SPO", "ABP_SPP-CBFV_SPP", "ABP_SPO-CBFV_SPP", "ABP_SPP-CBFV_SPO", "ABP_RR-CBFV_SPO",
+              "ABP_RR-CBFV_SPP", "ABP_SPO-CBFV_RR", "ABP_SPP-CBFV_RR", "ABP_RR-CBFV_RR"]
 
 
 @pytest.fixture
@@ -68,19 +70,23 @@ def test_cost_stages_in_sequence(normalised, make_ctx, settings):
     ComputeDtwCosts(make_ctx("costs")).run()
     costs_file = config.stage_dir("costs") / "td-method" / "B6" / "V1_B6_PP_F_M_PP_DTW.csv"
     costs = pd.read_csv(costs_file, sep=";")
-    assert list(costs.columns) == ["Window"] + settings.analysis["pairs"]
+    # costs computes all 9 pairs, whatever [analysis] pairs is (B-20)
+    assert list(costs.columns) == ["Window"] + COST_PAIRS
+    # a pair of settings.toml, followed through the stages
+    pair = settings.analysis["pairs"][-1]
+    abp, cbfv = pair.split("-")
     source = pd.read_csv(config.stage_dir("normalised") / "B6" / "V1_B6_PP_F_M_PP.csv", sep=";")
-    expected, _, _ = DTW(source["ABP_RR"], source["CBFV_SPP"], var="DDTW").sliding_window_dtw(10, 5, "td-method")
-    np.testing.assert_allclose(costs["ABP_RR-CBFV_SPP"], expected)
+    expected, _, _ = DTW(source[abp], source[cbfv], var="DDTW").sliding_window_dtw(10, 5, "td-method")
+    np.testing.assert_allclose(costs[pair], expected)
     assert (config.stage_dir("costs") / "d-method" / "BAS" / "V4_BAS_PP_F_M_PP_DTW.csv").exists()
 
     GroupCostsByPair(make_ctx("pairs")).run()
-    pairs = pd.read_csv(config.stage_dir("pairs") / "td-method" / "B6" / "ABP_RR-CBFV_SPP.csv", sep=";")
+    pairs = pd.read_csv(config.stage_dir("pairs") / "td-method" / "B6" / f"{pair}.csv", sep=";")
     assert sorted(pairs.columns) == [f"V{v}" for v in range(1, SUBJECTS + 1)]
     np.testing.assert_allclose(pairs["V1"], expected)
 
     AverageCostsPerSubject(make_ctx("mean_costs")).run()
-    means = pd.read_csv(config.stage_dir("mean_costs") / "ABP_RR-CBFV_SPP.csv", sep=";", index_col=0)
+    means = pd.read_csv(config.stage_dir("mean_costs") / f"{pair}.csv", sep=";", index_col=0)
     assert sorted(means.columns) == sorted(f"{m}_{c}" for m in ["td-method", "d-method"] for c in CONDITIONS)
     assert means.loc["V1", "td-method_B6"] == pytest.approx(np.mean(expected))
 

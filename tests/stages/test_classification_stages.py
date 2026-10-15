@@ -27,7 +27,7 @@ def test_feature_matrices_for_every_method_and_pair(config, make_ctx, settings):
     for method in settings.analysis["methods"]:
         files = sorted(p.stem for p in (config.stage_dir("features") / method).glob("*.csv"))
         assert files == sorted(settings.analysis["pairs"])
-    matrix = pd.read_csv(config.stage_dir("features") / "d-method" / "ABP_RR-CBFV_SPP.csv", sep=";")
+    matrix = pd.read_csv(config.stage_dir("features") / "d-method" / f"{settings.analysis['pairs'][-1]}.csv", sep=";")
     assert len(matrix) == 3 * 4 and set(matrix["condition"]) == set(settings.analysis["conditions"])
 
 

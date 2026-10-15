@@ -29,12 +29,6 @@ methods = ["td-method", "d-method"]
 pairs = [
     "ABP_SPO-CBFV_SPO",
     "ABP_SPP-CBFV_SPP",
-    "ABP_SPO-CBFV_SPP",
-    "ABP_SPP-CBFV_SPO",
-    "ABP_RR-CBFV_SPO",
-    "ABP_RR-CBFV_SPP",
-    "ABP_SPO-CBFV_RR",
-    "ABP_SPP-CBFV_RR",
     "ABP_RR-CBFV_RR",
 ]
 # beat-to-beat metrics compared between the conditions (medians per subject)
