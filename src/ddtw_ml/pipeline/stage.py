@@ -7,6 +7,7 @@ processed and rejected inputs.
 
 import logging
 import os
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -19,6 +20,27 @@ class PipelineError(RuntimeError):
     """
     A stage cannot be run: unknown, missing input or output in a frozen version.
     """
+
+
+class UsedAnalysis(Mapping[str, list[str]]):
+    """
+    Read-only view of the parameters of the analysis that records every parameter read (key -> value).
+    """
+
+    def __init__(self, analysis: Mapping[str, list[str]], used: dict[str, list[str]]) -> None:
+        self._analysis = analysis
+        self._used = used
+
+    def __getitem__(self, key: str) -> list[str]:
+        value = self._analysis[key]
+        self._used[key] = list(value)
+        return value
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._analysis)
+
+    def __len__(self) -> int:
+        return len(self._analysis)
 
 
 @dataclass
@@ -46,6 +68,8 @@ class StageContext:
         self.settings = settings
         self.log = log or logging.getLogger(f"{node.kind}.{node.key}")
         self.report = StageReport(node.key)
+        # the parameters of the analysis the stage read, recorded in the state of the run
+        self.analysis_used: dict[str, list[str]] = {}
 
     @property
     def params(self) -> dict[str, Any]:
@@ -55,11 +79,12 @@ class StageContext:
         return self.settings.params(self.node)
 
     @property
-    def analysis(self) -> dict[str, list[str]]:
+    def analysis(self) -> Mapping[str, list[str]]:
         """
-        Parameters of the analysis shared by the stages ([analysis] in settings.toml).
+        Parameters of the analysis shared by the stages ([analysis] in settings.toml); the ones read are recorded in
+        analysis_used.
         """
-        return self.settings.analysis
+        return UsedAnalysis(self.settings.analysis, self.analysis_used)
 
     def input(self, key: str | None = None) -> Path:
         """

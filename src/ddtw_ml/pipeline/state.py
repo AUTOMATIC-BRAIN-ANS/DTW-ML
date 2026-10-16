@@ -2,13 +2,14 @@
 State of the stages and plots of a data version: the finished runs, recorded in {data root}/{version}/pipeline_state.json
 next to pipeline.log (outside the stage directories, which the next stages list as their inputs).
 
-A stage is done when its last run finished, its output directory exists and none of its inputs was run after it.
-The state also records the parameters of the last run of every stage.
+A stage is done when its last run finished, its output directory exists, none of its inputs was run after it and the
+parameters of the analysis it read ([analysis] in settings.toml) did not change. The state also records the parameters
+of the last run of every stage.
 """
 
 import json
 import os
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from pathlib import Path
 
 from ddtw_ml.config import Config, Node
@@ -32,8 +33,8 @@ def read_state(config: Config, version: str) -> dict[str, dict]:
     Function to read the finished runs of the stages and plots of a version.
     :param config: configuration.
     :param version: data version.
-    :return: {"{kind}:{key}": {"finished": ISO time, "processed": n, "rejected": n, "params": {...}}}; empty if
-        nothing ran yet.
+    :return: {"{kind}:{key}": {"finished": ISO time, "processed": n, "rejected": n, "params": {...},
+        "analysis": {parameter of the analysis read: value}}}; empty if nothing ran yet.
     """
     path = state_path(config, version)
     if not path.is_file():
@@ -47,19 +48,35 @@ def write_state(config: Config, version: str, state: dict[str, dict]) -> None:
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
-def is_done(config: Config, node: Node, version: str, state: dict[str, dict], ran: Collection[str] = ()) -> bool:
+def analysis_changes(entry: dict, analysis: Mapping[str, list[str]]) -> list[str]:
     """
-    Function to check whether a stage (or plot) is done: its last run finished, its output exists and none of its
-    inputs ran after it.
+    Function to find the parameters of the analysis that changed since the last run of a stage.
+    :param entry: state of the stage (see read_state()).
+    :param analysis: current parameters of the analysis ([analysis] in settings.toml).
+    :return: names of the changed parameters; ["unknown"] if the run did not record them.
+    """
+    if "analysis" not in entry:
+        return ["unknown"]
+    return [key for key, value in entry["analysis"].items() if list(analysis.get(key, [])) != value]
+
+
+def is_done(config: Config, node: Node, version: str, state: dict[str, dict], ran: Collection[str] = (),
+            analysis: Mapping[str, list[str]] | None = None) -> bool:
+    """
+    Function to check whether a stage (or plot) is done: its last run finished, its output exists, none of its
+    inputs ran after it and the parameters of the analysis it read did not change.
     :param config: configuration.
     :param node: stage or plot.
     :param version: data version.
     :param state: finished runs (see read_state()).
     :param ran: stages run (or to be run) earlier in the current run.
+    :param analysis: current parameters of the analysis (None: not checked).
     :return: True if the stage can be skipped.
     """
     entry = state.get(state_key(node))
     if entry is None or not output_dir(config, node, version).is_dir():
+        return False
+    if analysis is not None and analysis_changes(entry, analysis):
         return False
     for key in node.inputs:
         if key not in config.stages:  # raw data
@@ -72,13 +89,15 @@ def is_done(config: Config, node: Node, version: str, state: dict[str, dict], ra
     return True
 
 
-def describe(config: Config, kind: str = "stage", version: str | None = None) -> list[str]:
+def describe(config: Config, kind: str = "stage", version: str | None = None,
+             analysis: Mapping[str, list[str]] | None = None) -> list[str]:
     """
     Function to describe the stages (or plots) in the order of execution: inputs, output directory, whether the
     stage is done or its output exists and whether the module of the stage exists.
     :param config: configuration.
     :param kind: "stage" or "plot".
     :param version: data version (default: the active one).
+    :param analysis: current parameters of the analysis (None: their changes are not checked).
     :return: lines of the description.
     """
     v = config.get_version(version)
@@ -88,7 +107,7 @@ def describe(config: Config, kind: str = "stage", version: str | None = None) ->
     for i, key in enumerate(config.order(kind), start=1):
         node = nodes[key]
         out = output_dir(config, node, v.name)
-        if is_done(config, node, v.name, state):
+        if is_done(config, node, v.name, state, analysis=analysis):
             status = f"done {state[state_key(node)]['finished']}"
         else:
             status = "exists" if out.is_dir() else "missing"

@@ -16,7 +16,7 @@ from ddtw_ml.log import PIPELINE_LOGGERS
 from ddtw_ml.pipeline import PipelineError, Stage, StageContext, StageReport
 from ddtw_ml.pipeline.orchestrator import Orchestrator
 from ddtw_ml.pipeline.registry import create_stage, select
-from ddtw_ml.pipeline.state import describe, read_state
+from ddtw_ml.pipeline.state import describe, read_state, write_state
 from main import main
 
 CONFIG = """
@@ -412,3 +412,52 @@ def test_an_import_error_of_a_stage_is_reported(config, calls, capsys, monkeypat
     assert ("Module 'fake_stages.first' of stage 'first' cannot be imported: No module named 'missing_dependency' (install"
             in capsys.readouterr().err)
     assert calls == []
+
+
+def test_a_change_of_the_analysis_read_by_a_stage_runs_it_again(config, tmp_path, calls, log):
+    run(config, load_settings(config, tmp_path / "config.toml"), ["first", "second"], log=log)
+    state = read_state(config, "2.0")
+    # first reads [analysis] conditions, second reads no parameter of the analysis
+    assert state["stage:first"]["analysis"] == {"conditions": ["B6"]}
+    assert state["stage:second"]["analysis"] == {}
+    # a parameter that no stage read: both are done
+    write_settings(tmp_path, ('methods = ["d-method"]', 'methods = ["td-method"]'))
+    run(config, load_settings(config, tmp_path / "config.toml"), ["first", "second"], log=log)
+    assert calls == ["first", "second"]
+    # a parameter read by first: first runs again, and second after it
+    write_settings(tmp_path, ('conditions = ["B6"]', 'conditions = ["B6", "B10"]'))
+    settings = load_settings(config, tmp_path / "config.toml")
+    assert "first" in describe(config, "stage", analysis=settings.analysis)[1]
+    assert "(exists)" in describe(config, "stage", analysis=settings.analysis)[1]
+    run(config, settings, ["first", "second"], log=log)
+    assert calls == ["first", "second", "first", "second"]
+    assert read_state(config, "2.0")["stage:first"]["analysis"] == {"conditions": ["B6", "B10"]}
+
+
+def test_a_state_without_the_analysis_runs_the_stage_again(config, settings, calls, log):
+    run(config, settings, ["first"], log=log)
+    state = read_state(config, "2.0")
+    del state["stage:first"]["analysis"]
+    write_state(config, "2.0", state)
+    run(config, settings, ["first"], log=log)
+    assert calls == ["first", "first"]
+
+
+def test_the_output_of_the_last_run_is_cleared(config, settings, calls, log):
+    run(config, settings, ["first"], log=log)
+    stale = config.stage_dir("first") / "B10" / "old.csv"
+    stale.parent.mkdir()
+    stale.write_text("x\n", encoding="utf-8")
+    run(config, settings, ["first"], force=True, log=log)
+    assert not stale.parent.exists()
+    assert (config.stage_dir("first") / "B6" / "V1.csv").exists()
+
+
+@pytest.mark.parametrize("target", ["raw", "input", "root"])
+def test_an_output_that_holds_other_data_is_not_cleared(config, settings, calls, log, monkeypatch, target):
+    run(config, settings, ["first", "second"], log=log)
+    paths = {"raw": config.raw_dir(), "input": config.stage_dir("first"), "root": config.data_root / "2.0"}
+    monkeypatch.setattr("ddtw_ml.pipeline.orchestrator.output_dir", lambda *args: paths[target])
+    with pytest.raises(PipelineError, match="is not removed"):
+        run(config, settings, ["second"], force=True, log=log)
+    assert (config.raw_dir() / "B6" / "V1.csv").exists() and (config.stage_dir("first") / "B6" / "V1.csv").exists()

@@ -80,7 +80,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config = load_config()
         if args.command == "list":
-            print("\n".join(describe(config, "plot" if args.plots else "stage", args.version)))
+            try:
+                analysis = load_settings(config).analysis
+            except ConfigError:
+                analysis = None  # the stages are listed without checking the changes of [analysis]
+            print("\n".join(describe(config, "plot" if args.plots else "stage", args.version, analysis)))
             return 0
         settings = load_settings(config)
         version = config.get_version(args.version)
