@@ -31,6 +31,19 @@ def test_feature_matrices_for_every_method_and_pair(config, make_ctx, settings):
     assert len(matrix) == 3 * 4 and set(matrix["condition"]) == set(settings.analysis["conditions"])
 
 
+def test_feature_matrices_use_the_conditions_of_the_analysis(config, make_ctx, settings):
+    settings.analysis["conditions"] = ["B15", "BAS"]
+    pair = settings.analysis["pairs"][0]
+    for method in settings.analysis["methods"]:
+        for condition in ["BAS", "B6", "B10", "B15"]:
+            directory = config.stage_dir("pairs") / method / condition
+            directory.mkdir(parents=True)
+            pd.DataFrame({"V1": [0.1, 0.2], "V2": [0.3, 0.4]}).to_csv(directory / f"{pair}.csv", sep=";", index=False)
+    BuildFeatureMatrices(make_ctx("features")).run()
+    matrix = pd.read_csv(config.stage_dir("features") / "td-method" / f"{pair}.csv", sep=";")
+    assert matrix["condition"].tolist() == ["BAS", "BAS", "B15", "B15"]
+
+
 def test_cross_validation_and_scores_get_the_stage_directories(config, make_ctx, monkeypatch, settings):
     calls = {}
     monkeypatch.setattr(cv_results_stage, "classify", lambda options: calls.setdefault("classify", options))

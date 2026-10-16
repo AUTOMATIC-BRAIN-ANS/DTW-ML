@@ -299,19 +299,20 @@ class FeatureMatrix:
         return matrix
 
 
-def build_matrices(input_dir: str, output_dir: str, metrics: list[str]) -> None:
+def build_matrices(input_dir: str, output_dir: str, metrics: list[str], conditions: list[str] = CONDITIONS) -> None:
     """
     Load the costs, build and save one feature matrix per metric and log a summary to {output_dir}/feature_matrix.log.
     :param input_dir: folders with conditions, {input_dir}/{condition}/{metric}.csv.
     :param output_dir: output directory, {output_dir}/{metric}.csv.
     :param metrics: metric pairs (one feature matrix each).
+    :param conditions: breathing conditions, in the order of the rows.
     """
     os.makedirs(output_dir, exist_ok=True)
     counter = LoggerUtils.setup(logger, os.path.join(output_dir, LOG_FILE))
     logger.info(f"=== Input: {input_dir} ===")
-    reader = CostReader(input_dir, metrics=metrics)
+    reader = CostReader(input_dir, conditions=conditions, metrics=metrics)
     costs = reader.get_costs()
-    feature_matrix = FeatureMatrix(costs)
+    feature_matrix = FeatureMatrix(costs, conditions=conditions)
     feature_matrix.log_incomplete_subjects()
     n_rows = 0
     for metric in metrics:
@@ -320,13 +321,15 @@ def build_matrices(input_dir: str, output_dir: str, metrics: list[str]) -> None:
         matrix.to_csv(output_path, sep=SEPARATOR, decimal=".", index=False)
         n_rows = len(matrix)
         logger.info(f"=== Saved: {output_path} ===")
-    logger.info(f"Files read: {len(costs)}/{len(CONDITIONS) * len(metrics)} | "
+    logger.info(f"Files read: {len(costs)}/{len(conditions) * len(metrics)} | "
                 f"subjects: {len(reader.get_subjects())} | rows per matrix: {n_rows} | warnings: {counter.warnings} | errors: {counter.errors}")
 
 
 class BuildFeatureMatrices(Stage):
     def run(self) -> None:
         ctx = self.ctx
+        # baseline first, then the paced conditions in the order of the config (rows: BAS, B6, B10, B15)
+        conditions = sorted(ctx.analysis["conditions"], key=lambda c: c != "BAS")
         for method in ctx.analysis["methods"]:
-            build_matrices(str(ctx.input() / method), str(ctx.output(method)), ctx.analysis["pairs"])
+            build_matrices(str(ctx.input() / method), str(ctx.output(method)), ctx.analysis["pairs"], conditions)
             ctx.processed(method)
