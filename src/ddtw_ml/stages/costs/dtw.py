@@ -214,7 +214,8 @@ class DTW:
         :return: list with alignment costs per window and the list with analyzed windows, and position of a window with
                  minimum or maximum alignment cost.
         """
-        alignment_costs, windows = self.sliding_window_dtw(window_size, step, method)
+        alignment_costs, windows, _ = self.sliding_window_dtw(window_size, step, method)
+        alignment_costs = np.array(alignment_costs)
         alignment_cost = 0
         if min_max == "MIN":
             alignment_cost = np.min(alignment_costs)
@@ -260,7 +261,7 @@ class DTW:
         :param method: method to calculate alignment cost.
         :return: mean alignment cost.
         """
-        alignment_costs, windows = self.sliding_window_dtw(window_size, step, method)
+        alignment_costs, _, _ = self.sliding_window_dtw(window_size, step, method)
         return np.mean(alignment_costs)
 
     def find_alignment_cost(self, method, look_for, window_size=10, step=1, filename=None):
