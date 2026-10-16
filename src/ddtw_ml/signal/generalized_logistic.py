@@ -77,7 +77,7 @@ class GeneralizedLogistic:
         x_min, x_med, x_max = self.get_statistics()
         M0 = x_med
         Q0 = self.find_Q0()
-        B0 = (np.log(1 + Q0) ** np.log2(10) - 1) - np.log(Q0) / (x_med - x_min)
+        B0 = (np.log((1 + Q0) ** np.log2(10) - 1) - np.log(Q0)) / (x_med - x_min)
         nu0 = np.log2(1 + Q0)
         return Q0, B0, M0, nu0
 
