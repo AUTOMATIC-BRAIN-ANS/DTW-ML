@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ddtw_ml.signal.artefacts import filter_abp
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
 from ddtw_ml.stages.filtered import RemoveBreathing, remove_freq
@@ -43,6 +44,22 @@ def test_calculate_cbfv_keeps_the_valid_side(fvl, fvr, expected):
     cbfv = calculate_cbfv(df, "fvl", "fvr")
     assert list(cbfv.index) == [5, 6]
     np.testing.assert_array_equal(cbfv.to_numpy(), [expected, 70.0])
+
+
+@pytest.mark.parametrize("abp, expected", [
+    ([80, 81, 150, 82], [80, 81, np.nan, 82]),  # spike up
+    ([80, 81, 20, 82], [80, 81, np.nan, 82]),  # spike down
+    # steep slopes of a beat with a rounded peak
+    ([80, 95, 110, 125, 135, 138, 136, 124, 112], [80, 95, 110, 125, 135, 138, 136, 124, 112]),
+    ([80, 81, 150, 160, 82], [80, 81, 150, 160, 82]),  # two-sample artefact: no single sample is an impulse
+    ([150, 80, 81, 82, 150], [150, 80, 81, 82, 150]),  # the first and last sample are not checked
+    ([80, np.nan, 150, 85], [80, np.nan, 150, 85]),  # a missing neighbour: not an impulse
+])
+def test_filter_abp_removes_impulses_only(abp, expected):
+    df = pd.DataFrame({"ABP": abp}, index=range(10, 10 + len(abp)))
+    out = filter_abp(df, "ABP")
+    assert list(out.index) == list(df.index)
+    np.testing.assert_array_equal(out.to_numpy(), expected)
 
 
 def test_import_recordings_numbers_subjects_and_rejects_unknown_formats(config, make_ctx):
