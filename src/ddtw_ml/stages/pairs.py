@@ -26,6 +26,9 @@ class GroupCostsByPair(Stage):
                     if match:
                         subjects.append((match.group(1), pd.read_csv(data_path / method / breath / file,
                                                                      delimiter=';')))
+                if not subjects:
+                    ctx.log.warning(f"{method}/{breath}: no cost files of this condition - skipped")
+                    continue
                 out_dir = ctx.output(method, breath)
                 for metric in ctx.analysis["pairs"]:
                     result_df = pd.concat([df[metric].rename(subject) for subject, df in subjects], axis=1)

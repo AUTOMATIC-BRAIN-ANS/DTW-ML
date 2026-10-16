@@ -116,3 +116,12 @@ def test_group_costs_by_pair_takes_every_subject_from_the_file_names(config, mak
                         sep=";")
     assert list(pairs.columns) == ["V100", "V101", "V2"]
     assert pairs["V100"].tolist() == [100, 100.5]
+
+
+def test_group_costs_by_pair_skips_a_condition_without_cost_files(config, make_ctx, caplog):
+    write_costs(config, "B6", [1])
+    (config.stage_dir("costs") / "td-method" / "B10").mkdir()
+    GroupCostsByPair(make_ctx("pairs")).run()
+    assert (config.stage_dir("pairs") / "td-method" / "B6").is_dir()
+    assert not (config.stage_dir("pairs") / "td-method" / "B10").exists()
+    assert "td-method/B10: no cost files" in caplog.text
