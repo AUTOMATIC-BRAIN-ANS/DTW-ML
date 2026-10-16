@@ -4,11 +4,12 @@ Tests of the signal stages (recordings, cleaned, filtered) on small synthetic re
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
 from ddtw_ml.stages.filtered import RemoveBreathing, remove_freq
-from ddtw_ml.stages.recordings import ImportRecordings
+from ddtw_ml.stages.recordings import ImportRecordings, calculate_cbfv
 
 FS = 200
 
@@ -28,6 +29,20 @@ def synthetic_signals(n: int = 4000, seed: int = 0) -> pd.DataFrame:
         "BPM": 6 + rng.normal(0, 0.1, n),
         "ETCO2": 35 + (t // 10) % 3,
     })
+
+
+@pytest.mark.parametrize("fvl, fvr, expected", [
+    (50, 60, 60), (60, 50, 60),  # both valid: the larger one
+    (50, 10, 50), (10, 50, 50),  # one side below 20: the other one, whichever side it is
+    (50, np.nan, 50), (np.nan, 50, 50),  # one side missing
+    (np.nan, np.nan, np.nan), (10, 15, np.nan),  # no valid side
+])
+def test_calculate_cbfv_keeps_the_valid_side(fvl, fvr, expected):
+    # an index that is not 0..n-1 (B-01: the values were indexed by label)
+    df = pd.DataFrame({"fvl": [fvl, 70.0], "fvr": [fvr, 30.0]}, index=[5, 6])
+    cbfv = calculate_cbfv(df, "fvl", "fvr")
+    assert list(cbfv.index) == [5, 6]
+    np.testing.assert_array_equal(cbfv.to_numpy(), [expected, 70.0])
 
 
 def test_import_recordings_numbers_subjects_and_rejects_unknown_formats(config, make_ctx):

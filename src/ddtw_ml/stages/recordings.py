@@ -9,6 +9,7 @@ on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the 
 
 import os
 
+import numpy as np
 import pandas as pd
 
 from ddtw_ml.pipeline import Stage
@@ -56,21 +57,15 @@ FILE_FORMATS = [
 
 def calculate_cbfv(df, col_fvl, col_fvr):
     """
-    Function to calculate the CBFV signal based on the FV from left and right side.
+    Function to calculate the CBFV signal based on the FV from left and right side: the larger of the two, or the one
+    that is not NaN (NaN only if both sides are NaN).
     :param df: data in the DataFrame format.
     :param col_fvl: FV from the left side.
     :param col_fvr: FV from the right side.
-    :return: CBFV signal.
+    :return: CBFV signal (index of the data).
     """
     fvl, fvr = filter_fv(df, col_fvl), filter_fv(df, col_fvr)
-    length = min(len(fvl), len(fvr))
-    cbfv = []
-    for i in range(0, length):
-        if fvl[i] > fvr[i]:
-            cbfv.append(fvl[i])
-        else:
-            cbfv.append(fvr[i])
-    return pd.Series(cbfv)
+    return pd.Series(np.fmax(fvl.to_numpy(dtype=float), fvr.to_numpy(dtype=float)), index=df.index)
 
 
 def load_signals(file_path):

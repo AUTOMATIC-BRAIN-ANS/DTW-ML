@@ -33,9 +33,5 @@ def filter_fv(df, col_fv, min_value=20):
     :param min_value: minimum value of a range.
     :return: cleared signal.
     """
-    fv = df[col_fv].copy()
-    length = len(fv)
-    for i in range(0, length):
-        if fv[i] < min_value:
-            fv[i] = np.nan
-    return fv
+    fv = df[col_fv].astype(float)
+    return fv.mask(fv < min_value)
