@@ -69,19 +69,15 @@ class PreprocessData:
     @staticmethod
     def __assign_signals(df, first_column, second_column, third_column):
         """
-        Method to assign signals to variables based on the specified column names, involving looking for artefacts in
-        the CBFV signal.
+        Method to assign signals to variables based on the specified column names; the ABP column, wherever it is, is
+        cleared from artefacts.
         :param df: data.
         :param first_column: first column name.
         :param second_column: second column name.
+        :param third_column: third column name.
         :return: signals to be assigned.
         """
-        if second_column == 'CBFV':
-            s1, s2 = filter_abp(df, col_abp='ABP'), df[second_column]
-        elif first_column == 'CBFV':
-            s1, s2 = filter_abp(df, col_abp='ABP'), df[second_column]
-        else:
-            s1, s2 = df[first_column], df[second_column]
+        s1, s2 = (filter_abp(df, col_abp=col) if col == 'ABP' else df[col] for col in (first_column, second_column))
         s3 = df[third_column]
         return s1, s2, s3
 

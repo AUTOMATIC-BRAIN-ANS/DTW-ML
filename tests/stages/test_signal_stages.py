@@ -110,6 +110,17 @@ def test_clean_signals_trims_bpm_and_etco2_like_abp_and_cbfv(tmp_path):
     np.testing.assert_array_equal(out["ETCO2"], signals["ETCO2"].iloc[700:])
 
 
+@pytest.mark.parametrize("first, second", [("ABP", "CBFV"), ("CBFV", "ABP")])
+def test_preprocess_data_filters_the_abp_column_in_either_position(tmp_path, first, second):
+    signals = synthetic_signals(100)
+    signals.loc[50, "ABP"] = 300  # impulse artefact
+    signals.to_csv(tmp_path / "V1_B10.csv", sep=";", index=False)
+    prep = PreprocessData(str(tmp_path / "V1_B10.csv"), first, second, "BPM")
+    abp, cbfv = (prep.get_first_signal(), prep.get_second_signal())[::1 if first == "ABP" else -1]
+    assert np.isnan(abp.iloc[50]) and abp.drop(abp.index[50]).notna().all()
+    np.testing.assert_allclose(cbfv, signals["CBFV"], rtol=1e-12)
+
+
 def test_remove_breathing_uses_the_paced_rate(config, make_ctx):
     src = config.stage_dir("cleaned") / "B6"
     src.mkdir(parents=True)
