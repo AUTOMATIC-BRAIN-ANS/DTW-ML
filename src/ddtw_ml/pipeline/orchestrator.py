@@ -16,7 +16,7 @@ from pathlib import Path
 from ddtw_ml.config import Config, Node
 from ddtw_ml.log import PIPELINE_LOGGER
 from ddtw_ml.pipeline.stage import PipelineError, Stage, StageReport, output_dir
-from ddtw_ml.pipeline.state import analysis_changes, is_done, read_state, state_key, write_state
+from ddtw_ml.pipeline.state import analysis_changes, is_done, next_run, read_state, state_key, write_state
 
 
 def clear_output(config: Config, node: Node, version: str) -> Path | None:
@@ -122,7 +122,7 @@ class Orchestrator:
             report = stage.ctx.report
             log.info(f"=== {name}: {report.processed} processed, {len(report.rejected)} rejected ===")
             state[state_key(node)] = {"finished": datetime.now().isoformat(timespec="microseconds"),
-                                      "processed": report.processed, "rejected": len(report.rejected),
+                                      "run": next_run(state), "processed": report.processed, "rejected": len(report.rejected),
                                       "params": params, "analysis": stage.ctx.analysis_used}
             write_state(config, version, state)
             reports.append(report)

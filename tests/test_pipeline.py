@@ -461,3 +461,21 @@ def test_an_output_that_holds_other_data_is_not_cleared(config, settings, calls,
     with pytest.raises(PipelineError, match="is not removed"):
         run(config, settings, ["second"], force=True, log=log)
     assert (config.raw_dir() / "B6" / "V1.csv").exists() and (config.stage_dir("first") / "B6" / "V1.csv").exists()
+
+
+def test_runs_are_ordered_by_their_number_not_by_the_clock(config, settings, calls, log, monkeypatch):
+    # a clock that gives every run the same time (as on Windows for runs that follow each other quickly)
+    class FrozenClock:
+        @staticmethod
+        def now():
+            from datetime import datetime
+            return datetime(2026, 1, 1)
+
+    monkeypatch.setattr("ddtw_ml.pipeline.orchestrator.datetime", FrozenClock)
+    run(config, settings, ["first", "second"], log=log)
+    run(config, settings, ["overview"], kind="plot", log=log)
+    run(config, settings, ["second"], force=True, log=log)
+    run(config, settings, ["overview"], kind="plot", log=log)
+    assert calls == ["first", "second", "overview", "second", "overview"]
+    state = read_state(config, "2.0")
+    assert state["stage:first"]["run"] == 1 and state["plot:overview"]["run"] == 5

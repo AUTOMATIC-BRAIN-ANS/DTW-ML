@@ -33,7 +33,8 @@ def read_state(config: Config, version: str) -> dict[str, dict]:
     Function to read the finished runs of the stages and plots of a version.
     :param config: configuration.
     :param version: data version.
-    :return: {"{kind}:{key}": {"finished": ISO time, "processed": n, "rejected": n, "params": {...},
+    :return: {"{kind}:{key}": {"finished": ISO time, "run": number of the run in the version, "processed": n,
+        "rejected": n, "params": {...},
         "analysis": {parameter of the analysis read: value}}}; empty if nothing ran yet.
     """
     path = state_path(config, version)
@@ -46,6 +47,28 @@ def write_state(config: Config, version: str, state: dict[str, dict]) -> None:
     path = state_path(config, version)
     os.makedirs(path.parent, exist_ok=True)
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+
+def next_run(state: dict[str, dict]) -> int:
+    """
+    Function to get the number of the next finished run of a version: one more than the last one.
+    :param state: finished runs (see read_state()).
+    :return: number of the run.
+    """
+    return max((entry.get("run", 0) for entry in state.values()), default=0) + 1
+
+
+def ran_after(source: dict, entry: dict) -> bool:
+    """
+    Function to check whether a stage finished after another one, by the numbers of their runs (the clock may give the
+    same time to runs that follow each other quickly); runs recorded without a number are compared by their time.
+    :param source: state of the first stage.
+    :param entry: state of the second stage.
+    :return: True if the first stage finished after the second one.
+    """
+    if "run" in source and "run" in entry:
+        return source["run"] > entry["run"]
+    return source["finished"] > entry["finished"]
 
 
 def analysis_changes(entry: dict, analysis: Mapping[str, list[str]]) -> list[str]:
@@ -84,7 +107,7 @@ def is_done(config: Config, node: Node, version: str, state: dict[str, dict], ra
         if key in ran:
             return False
         source = state.get(state_key(config.stages[key]))
-        if source is None or source["finished"] > entry["finished"]:
+        if source is None or ran_after(source, entry):
             return False
     return True
 
