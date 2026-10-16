@@ -140,3 +140,17 @@ def test_dtw_costs_of_all_nine_pairs(normalised, make_ctx, settings):
         expected, windows, _ = DTW(source[abp], source[cbfv], var="DDTW").sliding_window_dtw(10, 5, "d-method")
         np.testing.assert_allclose(costs[pair], expected)
     assert costs["Window"].tolist() == [str(w) for w in windows]
+
+
+def test_mean_costs_keep_the_subjects_of_every_condition(config, make_ctx, settings):
+    pair = settings.analysis["pairs"][0]
+    for condition, subjects in (("B10", ["V1", "V2"]), ("B6", ["V2", "V3"])):
+        directory = config.stage_dir("pairs") / "td-method" / condition
+        directory.mkdir(parents=True)
+        pd.DataFrame({s: [1.0, 3.0] for s in subjects}).to_csv(directory / f"{pair}.csv", sep=";", index=False)
+    settings.analysis["pairs"] = [pair]
+    AverageCostsPerSubject(make_ctx("mean_costs")).run()
+    means = pd.read_csv(config.stage_dir("mean_costs") / f"{pair}.csv", sep=";", index_col=0)
+    assert list(means.index) == ["V1", "V2", "V3"]
+    assert means.loc["V3", "td-method_B6"] == 2 and np.isnan(means.loc["V3", "td-method_B10"])
+    assert np.isnan(means.loc["V1", "td-method_B6"])
