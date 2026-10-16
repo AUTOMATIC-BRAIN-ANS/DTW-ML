@@ -72,13 +72,13 @@ def test_import_recordings_numbers_subjects_and_rejects_unknown_formats(config, 
     (raw / "PAC_2.csv").write_text("unknown;columns\n1;2\n", encoding="utf-8")
     ctx = make_ctx("recordings")
     ImportRecordings(ctx).run()
-    out = pd.read_csv(config.stage_dir("recordings") / "B6" / "V1_B6.csv", sep=";")
+    out = pd.read_csv(config.stage_dir("recordings") / "B6" / "V01_B6.csv", sep=";")
     assert list(out.columns) == ["DateTime", "ABP", "CBFV", "BPM", "ETCO2"]
     np.testing.assert_allclose(out["ETCO2"], s["ETCO2"])
     # CBFV is the larger of the two flow velocities
     np.testing.assert_allclose(out["CBFV"], s["CBFV"] + 1)
-    # the unknown file keeps its number (V2) and is copied to the spoiled data
-    assert not (config.stage_dir("recordings") / "B6" / "V2_B6.csv").exists()
+    # the unknown file keeps its number (V02) and is copied to the spoiled data
+    assert not (config.stage_dir("recordings") / "B6" / "V02_B6.csv").exists()
     assert (config.spoiled_dir() / "B6" / "PAC_2.csv").exists()
     assert ctx.report.processed == 1 and len(ctx.report.rejected) == 1
 

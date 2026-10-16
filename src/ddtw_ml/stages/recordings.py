@@ -2,9 +2,10 @@
 @author: Radoslaw Plawecki
 Stage `recordings` (raw -> recordings): reads the raw recordings of every condition, in one of the three CSV formats
 of the measuring equipment (FILE_FORMATS), and writes DateTime, ABP, CBFV = max(FV left, FV right), BPM and ETCO2
-per subject: {condition}/V{i}_{condition}.csv.
-The subject number i is the position of the raw file in the sorted directory listing (M-03), so it does not depend
+per subject: {condition}/V{i:02d}_{condition}.csv (V01, V02, ..., V10, ...).
+The subject number i is the position of the raw file in the sorted directory listing, so it does not depend
 on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the mapping is written to the log.
+The two digits keep the subjects in their numerical order when the file names are sorted.
 """
 
 import os
@@ -110,5 +111,6 @@ class ImportRecordings(Stage):
                     "BPM": bpm,
                     "ETCO2": etco2
                 })
-                new_df.to_csv(out_dir / f"V{i}_{directory}.csv", sep=";", index=False)
-                ctx.processed(f"{directory}/{file} -> V{i}_{directory}.csv")
+                subject = f"V{i:02d}"
+                new_df.to_csv(out_dir / f"{subject}_{directory}.csv", sep=";", index=False)
+                ctx.processed(f"{directory}/{file} -> {subject}_{directory}.csv")
