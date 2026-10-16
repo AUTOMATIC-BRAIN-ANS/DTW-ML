@@ -70,8 +70,8 @@ def test_cost_stages_in_sequence(normalised, make_ctx, settings):
     ComputeDtwCosts(make_ctx("costs")).run()
     costs_file = config.stage_dir("costs") / "td-method" / "B6" / "V1_B6_PP_F_M_PP_DTW.csv"
     costs = pd.read_csv(costs_file, sep=";")
-    # costs computes all 9 pairs, whatever [analysis] pairs is (B-20)
-    assert list(costs.columns) == ["Window"] + COST_PAIRS
+    # costs computes the pairs of [analysis] pairs, in their order
+    assert list(costs.columns) == ["Window"] + settings.analysis["pairs"]
     # a pair of settings.toml, followed through the stages
     pair = settings.analysis["pairs"][-1]
     abp, cbfv = pair.split("-")
@@ -125,3 +125,18 @@ def test_group_costs_by_pair_skips_a_condition_without_cost_files(config, make_c
     assert (config.stage_dir("pairs") / "td-method" / "B6").is_dir()
     assert not (config.stage_dir("pairs") / "td-method" / "B10").exists()
     assert "td-method/B10: no cost files" in caplog.text
+
+
+def test_dtw_costs_of_all_nine_pairs(normalised, make_ctx, settings):
+    config = normalised
+    settings.analysis["pairs"] = COST_PAIRS
+    AlignSubjects(make_ctx("aligned")).run()
+    ComputeDtwCosts(make_ctx("costs")).run()
+    costs = pd.read_csv(config.stage_dir("costs") / "d-method" / "B10" / "V2_B10_PP_F_M_PP_DTW.csv", sep=";")
+    assert list(costs.columns) == ["Window"] + COST_PAIRS
+    source = pd.read_csv(config.stage_dir("normalised") / "B10" / "V2_B10_PP_F_M_PP.csv", sep=";")
+    for pair in COST_PAIRS:
+        abp, cbfv = pair.split("-")
+        expected, windows, _ = DTW(source[abp], source[cbfv], var="DDTW").sliding_window_dtw(10, 5, "d-method")
+        np.testing.assert_allclose(costs[pair], expected)
+    assert costs["Window"].tolist() == [str(w) for w in windows]
