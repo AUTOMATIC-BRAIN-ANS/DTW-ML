@@ -64,35 +64,23 @@ class PreprocessingUtils:
         return s
 
     @staticmethod
-    def __fill_nans(s, method=None, order=None):
+    def interpolate_data(s, method=None, order=None, min_valid=20):
         """
-        Method to fill NaNs in signals using a specific method of interpolation.
+        Method to interpolate signals using a specific method of interpolation; NaNs at both ends are filled with the
+        nearest valid value.
         :param s: signal.
         :param method: method of interpolation.
         :param order: if a method is polynomial, then its order.
-        :return: signals with filled NaNs.
-        :raise ValueError: if a signal has too many gaps.
+        :param min_valid: minimum number of valid (not NaN) samples.
+        :return: interpolated signals.
+        :raise ValueError: if a signal has fewer than min_valid valid samples.
         """
         s = pd.Series(s)
-        s = s.interpolate(method=method, order=order)
-        if len(s) < 20:
-            raise ValueError("Signal has too many gaps!")
-        else:
-            return s
-
-    @staticmethod
-    def interpolate_data(s, method=None, order=None):
-        """
-        Method to interpolate signals using a specific method of interpolation.
-        :param s: signal.
-        :param method: method of interpolation.
-        :param order: if a method is polynomial, then its order.
-        :return: interpolated signals.
-        """
-        try:
-            return PreprocessingUtils.__fill_nans(s, method=method, order=order)
-        except ValueError as e:
-            print(f"Error occurred: {e}")
+        n_valid = int(s.notna().sum())
+        if n_valid < min_valid:
+            raise ValueError(f"Signal has too many gaps: {n_valid} valid samples of {len(s)} (at least {min_valid} "
+                             f"needed)!")
+        return s.interpolate(method=method, order=order, limit_direction='both')
 
     @staticmethod
     def normalize(s, method, min_value=-1, max_value=1):
