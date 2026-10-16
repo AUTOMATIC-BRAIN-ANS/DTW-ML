@@ -20,7 +20,7 @@ def values_in_order(index_list):
     count = 1
     summary = []
     for i in range(len(index_list) - 1, -1, -1):
-        if index_list[i] == index_list[i - 1] + 1:
+        if i > 0 and index_list[i] == index_list[i - 1] + 1:
             count += 1
         else:
             if count >= 1:
