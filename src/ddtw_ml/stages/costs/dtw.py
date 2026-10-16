@@ -15,16 +15,16 @@ from ddtw_ml.plotting import use_latex
 
 
 class DTW:
-    __cost_matrix: list | np.ndarray = []
-    __matches, __insertions, __deletions = 0, 0, 0
-    __path: list[tuple[int, int]] = []
-
-    def __init__(self, x, y, var=None):
+    def __init__(self, x, y, var=None) -> None:
         """
         Method to initialize params of a class.
         :param x: first signal.
         :param y: second signal.
         """
+        # state of the last traceback, separate for every instance
+        self.__cost_matrix: list | np.ndarray = []
+        self.__matches, self.__insertions, self.__deletions = 0, 0, 0
+        self.__path: list[tuple[int, int]] = []
         if var is None:
             self.x = np.array(x)
             self.y = np.array(y)
@@ -351,6 +351,8 @@ class DTW:
             fig, ax = plt.subplots()
         c = ax.imshow(matrix, cmap=plt.get_cmap("Blues"), interpolation="nearest", origin="upper")
         plt.colorbar(c, ax=ax)
+        if not self.__path:
+            self.traceback()
         x_path, y_path = zip(*self.__path[:-1])
         ax.plot(y_path, x_path, color="#003A7D", linewidth=1.5)
         ax.set_title("Cost matrix")
@@ -369,6 +371,8 @@ class DTW:
         """
         use_latex()
         x, y = self.x, self.y
+        if not self.__path:
+            self.traceback()
         for x_i, y_j in self.__path[:-1]:
             plt.plot([x_i, y_j], [x[x_i] + 1.5, y[y_j] - 1.5], c="C7")
         plt.plot(np.arange(x.shape[0]), x + 1.5, "-o", c="C3")

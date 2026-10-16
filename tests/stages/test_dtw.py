@@ -163,6 +163,20 @@ class TestDTW(unittest.TestCase):
             mock_show.assert_not_called()
         plt.close(fig)
 
+    def test_plots_without_traceback_compute_the_path(self):
+        for plot in (self.dtw.plot_cost_matrix, self.dtw.plot_alignment):
+            with patch("matplotlib.pyplot.show"):
+                plot()
+            plt.close("all")
+
+    def test_instances_do_not_share_the_path(self):
+        self.dtw.traceback()
+        path = list(self.dtw._DTW__path)
+        other = DTW([1, 2, 3], [1, 2, 3])
+        self.assertEqual(other.get_statistics(), (3, 0, 0))
+        self.assertEqual(self.dtw._DTW__path, path)
+        self.assertEqual(DTW([0], [0])._DTW__path, [])
+
     @patch("matplotlib.pyplot.savefig")
     def test_plot_alignment_without_filename(self, mock_savefig):
         self.dtw.traceback()
