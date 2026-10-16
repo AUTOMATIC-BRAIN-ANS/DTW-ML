@@ -121,13 +121,14 @@ class FromSignal:
         spp_locs, _ = self.find_spp()
         spo_locs, spo = [], []
         for i in range(len(wd) - 1):
-            start, end = wd[i] - 10, spp_locs[i]
+            start, end = max(wd[i] - 10, 0), spp_locs[i]
             wd_cbfv = self.signal[start:end]
             if wd_cbfv.size > 0:
                 spo.append(np.min(wd_cbfv))
                 spo_locs.append(np.argmin(wd_cbfv) + start)
             else:
                 spo.append(np.nan)
+                spo_locs.append(np.nan)
         return spo_locs, spo
 
     def find_rr(self):

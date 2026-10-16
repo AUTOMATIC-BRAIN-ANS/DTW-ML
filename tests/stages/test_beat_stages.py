@@ -107,6 +107,18 @@ def test_metric_positions_and_window_plots_are_in_ms(tmp_path, no_latex, monkeyp
     assert (tmp_path / "window.pdf").exists() and (tmp_path / "pulsation.svg").exists()
 
 
+def test_find_spo_starts_at_the_first_sample_and_keeps_one_location_per_value():
+    t = np.arange(600) / 200
+    s = 90 + 15 * np.sin(2 * np.pi * 1.2 * t)
+    s[598], s[599] = 0, 0  # the lowest values are at the end: a window starting before 0 would wrap around to them
+    from_signal = FromSignal(t * 1000, s, "abp")
+    from_signal.wd = np.array([5, 170, 337])
+    spo_locs, spo = from_signal.find_spo()
+    spp_locs, _ = from_signal.find_spp()
+    assert len(spo_locs) == len(spo) == 2
+    assert 0 <= spo_locs[0] < spp_locs[0] and spo[0] == s[spo_locs[0]]
+
+
 def write_beats(directory, n_abp, n_cbfv):
     directory.mkdir(parents=True)
     rng = np.random.default_rng(n_abp)
