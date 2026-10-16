@@ -97,3 +97,22 @@ def test_cost_stages_in_sequence(normalised, make_ctx, settings):
             posthoc = pd.read_csv(config.stage_dir("anova") / pair / f"{method}_posthoc_results.csv", sep=";")
             assert list(anova.columns) == ["Source", "F", "p_unc", "ng2"]
             assert len(posthoc) == 6
+
+
+def write_costs(config, condition, subjects):
+    directory = config.stage_dir("costs") / "td-method" / condition
+    directory.mkdir(parents=True)
+    for v in subjects:
+        pd.DataFrame({"Window": [0, 5], **{p: [v, v + 0.5] for p in COST_PAIRS}}).to_csv(
+            directory / f"V{v}_{condition}_PP_F_M_PP_DTW.csv", sep=";", index=False)
+    return directory
+
+
+def test_group_costs_by_pair_takes_every_subject_from_the_file_names(config, make_ctx, settings):
+    directory = write_costs(config, "B6", [2, 100, 101])
+    (directory / "V3_B10_PP_F_M_PP_DTW.csv").write_text("Window\n0\n", encoding="utf-8")  # another condition
+    GroupCostsByPair(make_ctx("pairs")).run()
+    pairs = pd.read_csv(config.stage_dir("pairs") / "td-method" / "B6" / f"{settings.analysis['pairs'][0]}.csv",
+                        sep=";")
+    assert list(pairs.columns) == ["V100", "V101", "V2"]
+    assert pairs["V100"].tolist() == [100, 100.5]
