@@ -21,3 +21,11 @@ def test_interpolation_raises_when_too_few_samples_are_valid():
     s[:19] = 1.0
     with pytest.raises(ValueError, match="19 valid samples of 100"):
         PreprocessingUtils.interpolate_data(s, method="linear")
+
+
+def test_iqr_outlier_removal_checks_every_sample():
+    s = np.array([1000.0, 10, 11, 12, 10, 11, 12, 10, 11, 1000, np.nan])
+    out = PreprocessingUtils.iqr_outlier_removal(s, threshold=1.5)
+    assert np.isnan(out[[0, 9, 10]]).all()
+    np.testing.assert_array_equal(out[1:9], s[1:9])
+    assert s[0] == 1000  # the input is not changed

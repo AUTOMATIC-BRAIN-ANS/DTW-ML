@@ -45,7 +45,7 @@ class PreprocessingUtils:
     @staticmethod
     def iqr_outlier_removal(s, threshold):
         """
-        Method to detect and remove outliers using the IQR method.
+        Method to detect and remove outliers using the IQR method (every sample, the first one included).
         :param s: signal.
         :param threshold: threshold after which the outliers will be removed.
         :return: signal with removed outliers.
@@ -56,11 +56,8 @@ class PreprocessingUtils:
         lower_bound = q1 - threshold * iqr
         upper_bound = q3 + threshold * iqr
         # copy signal to avoid modifying the original
-        s = np.array(s.copy())
-        s = s.astype(float)
-        for i in range(1, len(s)):
-            if s[i] < lower_bound or s[i] > upper_bound:
-                s[i] = np.nan
+        s = np.array(s, dtype=float)
+        s[(s < lower_bound) | (s > upper_bound)] = np.nan
         return s
 
     @staticmethod
