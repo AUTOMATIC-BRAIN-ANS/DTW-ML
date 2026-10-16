@@ -341,10 +341,12 @@ class DTW:
         :param x_signal: label for the x-signal.
         :param y_signal: label for the y-signal.
         :param filename: name of a file to save a plot.
+        :param ax: axes to plot on (None: a new figure, which is also shown).
         """
         use_latex()
         label_pad = 8
         matrix = self.fill_matrix()[1:, 1:]
+        own_figure = ax is None
         if ax is None:
             fig, ax = plt.subplots()
         c = ax.imshow(matrix, cmap=plt.get_cmap("Blues"), interpolation="nearest", origin="upper")
@@ -357,6 +359,8 @@ class DTW:
         ax.legend(['Alignment path'])
         if filename is not None:
             plt.savefig(f"{filename}.pdf", format='pdf')
+        if own_figure:
+            plt.show()
 
     def plot_alignment(self, filename=None):
         """

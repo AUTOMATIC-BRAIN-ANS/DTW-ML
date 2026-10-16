@@ -5,6 +5,7 @@
 import unittest
 from unittest.mock import patch
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from ddtw_ml.stages.costs.dtw import DTW
@@ -138,23 +139,29 @@ class TestDTW(unittest.TestCase):
             mock_savefig.assert_called_once_with("test_plot.pdf", format="pdf")
             mock_show.assert_called_once()
 
-    # TODO: restore once it is decided whether plot_cost_matrix should call plt.show() — it currently doesn't,
-    #  so these fail on mock_show.assert_called_once().
-    # @patch("matplotlib.pyplot.savefig")
-    # def test_plot_cost_matrix_without_filename(self, mock_savefig):
-    #     self.dtw.traceback()
-    #     with patch("matplotlib.pyplot.show") as mock_show:
-    #         self.dtw.plot_cost_matrix()
-    #         mock_show.assert_called_once()
-    #     mock_savefig.assert_not_called()
-    #
-    # @patch("matplotlib.pyplot.savefig")
-    # def test_plot_cost_matrix_with_filename(self, mock_savefig):
-    #     self.dtw.traceback()
-    #     with patch("matplotlib.pyplot.show") as mock_show:
-    #         self.dtw.plot_cost_matrix(filename="test_plot")
-    #         mock_savefig.assert_called_once_with("test_plot.pdf", format="pdf")
-    #         mock_show.assert_called_once()
+    @patch("matplotlib.pyplot.savefig")
+    def test_plot_cost_matrix_without_filename(self, mock_savefig):
+        self.dtw.traceback()
+        with patch("matplotlib.pyplot.show") as mock_show:
+            self.dtw.plot_cost_matrix()
+            mock_show.assert_called_once()
+        mock_savefig.assert_not_called()
+
+    @patch("matplotlib.pyplot.savefig")
+    def test_plot_cost_matrix_with_filename(self, mock_savefig):
+        self.dtw.traceback()
+        with patch("matplotlib.pyplot.show") as mock_show:
+            self.dtw.plot_cost_matrix(filename="test_plot")
+            mock_savefig.assert_called_once_with("test_plot.pdf", format="pdf")
+            mock_show.assert_called_once()
+
+    def test_plot_cost_matrix_on_given_axes_is_not_shown(self):
+        self.dtw.traceback()
+        fig, ax = plt.subplots()
+        with patch("matplotlib.pyplot.show") as mock_show:
+            self.dtw.plot_cost_matrix(ax=ax)
+            mock_show.assert_not_called()
+        plt.close(fig)
 
     @patch("matplotlib.pyplot.savefig")
     def test_plot_alignment_without_filename(self, mock_savefig):
