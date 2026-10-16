@@ -225,7 +225,7 @@ class PreprocessData:
         """
         if s == 'first':
             signals = [self.get_first_signal(), self.get_first_signal_outliers_removed(),
-                       self.get_first_signal_interpolated(), self.get_second_signal_normalized()]
+                       self.get_first_signal_interpolated(), self.get_first_signal_normalized()]
         elif s == 'second':
             signals = [self.get_second_signal(), self.get_second_signal_outliers_removed(),
                        self.get_second_signal_interpolated(), self.get_second_signal_normalized()]

@@ -134,3 +134,12 @@ def test_remove_breathing_uses_the_paced_rate(config, make_ctx):
     # time of each sample in ms at 200 Hz; ETCO2 unchanged
     np.testing.assert_array_equal(out["DateTime"], np.arange(len(signals)) * 5)
     np.testing.assert_array_equal(out["ETCO2"], signals["ETCO2"])
+
+
+def test_cleaning_plot_data_shows_the_steps_of_the_chosen_signal(tmp_path):
+    synthetic_signals(1000).to_csv(tmp_path / "V1_B10.csv", sep=";", index=False)
+    prep = PreprocessData(str(tmp_path / "V1_B10.csv"), "ABP", "CBFV", "BPM")
+    for s, normalised in (("first", prep.get_first_signal_normalized()),
+                          ("second", prep.get_second_signal_normalized())):
+        _, signals, _ = prep.get_data_for_plot(s)
+        np.testing.assert_array_equal(signals[3], normalised)
