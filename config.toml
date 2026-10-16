@@ -116,8 +116,8 @@ input = ["mean_costs"]
 class = "ddtw_ml.stages.anova.CompareConditions"
 
 [stages.tables]
-description = "Medians and IQRs of the beat-to-beat metrics for the LaTeX tables and the RM-ANOVA of the metrics"
-input = ["paired"]
+description = "Medians and IQRs of the beat-to-beat metrics and the mean EtCO2 for the LaTeX tables and the RM-ANOVA of the metrics"
+input = ["paired", "filtered"]
 class = "ddtw_ml.stages.tables.TabulateMedians"
 
 [stages.metric_anova]

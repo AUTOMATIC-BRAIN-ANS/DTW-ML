@@ -14,7 +14,7 @@ class FromSignal:
     def __init__(self, datetime, signal, signal_type):
         """
         Method to initialize params of the class.
-        :param datetime: time of a simple.
+        :param datetime: time of each sample [ms].
         :param signal: cerebral blood flow velocity.
         :param signal_type: type of signal.
         """
@@ -27,6 +27,15 @@ class FromSignal:
         # the windows are the troughs; get_windows() would detect them a second time (P-01)
         self.trh = self.get_troughs()
         self.wd = self.trh.copy()
+
+    def to_time(self, locs):
+        """
+        Method to get the time of the samples at the given positions.
+        :param locs: positions of samples (NaN: no sample).
+        :return: time of the samples [ms] (NaN where there is no sample).
+        """
+        locs = np.asarray(locs, dtype=float)
+        return np.array([np.nan if np.isnan(loc) else self.datetime[int(loc)] for loc in locs])
 
     def get_troughs(self):
         """
@@ -124,12 +133,12 @@ class FromSignal:
     def find_rr(self):
         """
         Method to find RR interval for the ABP signal.
-        :return: rr -- RR interval.
+        :return: rr -- RR interval [ms] (time between consecutive systolic phase peaks).
         """
         spp_locs, _ = self.find_spp()
         rr = []
         for i in range(len(spp_locs) - 1):
-            rr.append(spp_locs[i + 1] - spp_locs[i])
+            rr.append(self.datetime[spp_locs[i + 1]] - self.datetime[spp_locs[i]])
         return rr
 
     def plot_window(self, wd_number=None, output_path=None):
@@ -150,14 +159,19 @@ class FromSignal:
         wd_datetime, wd_signal = self.datetime[start:end], self.signal[start:end]
 
         sft = 0.7
+        # offset of the arrowheads of the RR interval: 2.5 samples
+        arrow = 2.5 * (self.datetime[1] - self.datetime[0])
 
         plt.figure(figsize=(10, 6))
         plt.grid(True, zorder=0)
         plt.plot(wd_datetime, wd_signal, label=f"_{signal_type.upper()}", linewidth=2, zorder=3)
+        # positions of the metrics as time [ms], like the x axis
         spp_locs, spp = self.find_spp()
         dn_locs, dn = self.find_dn()
         dpp_locs, dpp = self.find_dpp()
         spo_locs, spo = self.find_spo()
+        spp_locs, dn_locs = self.to_time(spp_locs), self.to_time(dn_locs)
+        dpp_locs, spo_locs = self.to_time(dpp_locs), self.to_time(spo_locs)
         plt.scatter(spp_locs[i], spp[i] + sft, label="SPP", color="green", marker="v", s=80, zorder=2)
         # plt.scatter(dn_locs[i], dn[i] + sft, label="DN", color="red", marker="v", s=80, zorder=2)
         # plt.scatter(dpp_locs[i], dpp[i] + sft, label="DPP", color="orange", marker="v", s=80, zorder=2)
@@ -166,27 +180,27 @@ class FromSignal:
         if signal_type.lower() == "cbfv":
             plt.vlines(x=spp_locs[i], ymin=48.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
             plt.vlines(x=spp_locs[i + 1], ymin=48.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
-            plt.scatter(spp_locs[i] + 2.5, 50, color="darkolivegreen", marker="<", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1] - 2.5, 50, color="darkolivegreen", marker=">", s=80, zorder=2)
+            plt.scatter(spp_locs[i] + arrow, 50, color="darkolivegreen", marker="<", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1] - arrow, 50, color="darkolivegreen", marker=">", s=80, zorder=2)
             plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
             plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
             plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
-            plt.plot([spp_locs[i] - 2.5, spp_locs[i + 1] + 2.5], [50, 50], color="darkolivegreen", linewidth=1.5,
+            plt.plot([spp_locs[i] - arrow, spp_locs[i + 1] + arrow], [50, 50], color="darkolivegreen", linewidth=1.5,
                      label="RR interval", zorder=2)
             plt.ylabel(r"CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
         else:
             plt.vlines(x=spp_locs[i], ymin=98.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
             plt.vlines(x=spp_locs[i + 1], ymin=98.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
-            plt.scatter(spp_locs[i] + 2.5, 100, color="darkolivegreen", marker="<", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1] - 2.5, 100, color="darkolivegreen", marker=">", s=80, zorder=2)
+            plt.scatter(spp_locs[i] + arrow, 100, color="darkolivegreen", marker="<", s=80, zorder=2)
+            plt.scatter(spp_locs[i + 1] - arrow, 100, color="darkolivegreen", marker=">", s=80, zorder=2)
             plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
             # plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
             # plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
-            plt.plot([spp_locs[i]-2.5, spp_locs[i + 1]+2.5], [100, 100], color="darkolivegreen", linewidth=1.5,
+            plt.plot([spp_locs[i] - arrow, spp_locs[i + 1] + arrow], [100, 100], color="darkolivegreen", linewidth=1.5,
                      label="RR interval", zorder=2)
             plt.ylabel("ABP [mmHg]", fontsize=12)
         plt.title(f"{signal_type.upper()} metrics", fontsize=16)
-        plt.xlabel("Time [s]", fontsize=12)
+        plt.xlabel("Time [ms]", fontsize=12)
         plt.xlim(left=wd_datetime[0], right=wd_datetime[-1])
         plt.legend()
         plt.tight_layout()
@@ -212,7 +226,9 @@ class FromSignal:
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.set_box_aspect(1)
         ax.plot(wd_datetime, wd_signal, label=f"_{signal_type.upper()}", linewidth=16, zorder=3, color='black')
-        plt.xlim(left=wd_datetime[0] - 20, right=wd_datetime[-1] + 20)
+        # margin of 20 samples on both sides
+        margin = 20 * (self.datetime[1] - self.datetime[0])
+        plt.xlim(left=wd_datetime[0] - margin, right=wd_datetime[-1] + margin)
         plt.ylim(bottom=min(wd_signal) - 5, top=max(wd_signal) + 5)
         ax.set_xticks([])
         ax.set_yticks([])

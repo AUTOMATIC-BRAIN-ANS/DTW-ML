@@ -3,6 +3,7 @@
 Stage `filtered` (cleaned -> filtered): removes the breathing frequency from ABP and CBFV with the FFT (fs in
 settings.toml): {condition}/{file}_F.csv. The breathing rate is the paced one of the condition (paced_breaths in
 settings.toml: B6, B10, B15) or, in the other conditions (BAS), the mean recorded BPM.
+DateTime is the time of each sample in ms (sample number * 1000 / fs, from 0); ETCO2 is copied unchanged.
 """
 
 import os
@@ -39,19 +40,21 @@ class RemoveBreathing(Stage):
                 filename = dir_path / file
                 data = pd.read_csv(filename, delimiter=';')
                 df = pd.DataFrame(data)
-                s = ['DateTime', 'ABP', 'CBFV', 'BPM']
-                datetime, abp, cbfv, bpm = df[s[0]], df[s[1]], df[s[2]], df[s[3]]
+                s = ['ABP', 'CBFV', 'BPM', 'ETCO2']
+                abp, cbfv, bpm, etco2 = df[s[0]], df[s[1]], df[s[2]], df[s[3]]
+                fs = ctx.params["fs"]
                 paced_breaths = ctx.params["paced_breaths"]
                 if directory in paced_breaths:
                     breaths = paced_breaths[directory]
                 else:
                     breaths = np.mean(bpm)
-                abp = remove_freq(abp, T=ctx.params["fs"], breaths=breaths)
-                cbfv = remove_freq(cbfv, T=ctx.params["fs"], breaths=breaths)
+                abp = remove_freq(abp, T=fs, breaths=breaths)
+                cbfv = remove_freq(cbfv, T=fs, breaths=breaths)
                 filtered = {
-                    "DateTime": datetime,
+                    "DateTime": np.arange(len(df)) * 1000 / fs,
                     "ABP": abp,
-                    "CBFV": cbfv
+                    "CBFV": cbfv,
+                    "ETCO2": etco2
                 }
                 df = pd.DataFrame(filtered)
                 df.to_csv(out_dir / f"{filename.stem}_F.csv", sep=';', index=False)

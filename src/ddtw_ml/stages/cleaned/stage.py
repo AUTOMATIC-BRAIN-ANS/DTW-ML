@@ -1,6 +1,7 @@
 """
 Stage `cleaned` (recordings -> cleaned): removes the ABP artefacts and the outliers of ABP and CBFV, trims the gaps,
-interpolates and smooths the signals: {condition}/{file}_PP.csv. Files that fail are copied to the spoiled data.
+interpolates and smooths the signals: {condition}/{file}_PP.csv. BPM and ETCO2 are not cleaned, only trimmed at the
+same positions as ABP and CBFV. Files that fail are copied to the spoiled data.
 """
 
 import os
@@ -19,7 +20,8 @@ class CleanSignals(Stage):
             for file in os.listdir(dir_path):
                 file_path = dir_path / file
                 try:
-                    prep = PreprocessData(str(file_path), first_column='ABP', second_column='CBFV', third_column='BPM')
+                    prep = PreprocessData(str(file_path), first_column='ABP', second_column='CBFV', third_column='BPM',
+                                          fourth_column='ETCO2')
                     df = prep.get_preprocessed_data()
                 except Exception as e:
                     ctx.reject(file_path, directory, f"{type(e).__name__}: {e}")

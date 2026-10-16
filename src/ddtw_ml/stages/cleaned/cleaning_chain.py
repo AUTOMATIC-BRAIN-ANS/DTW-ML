@@ -17,12 +17,14 @@ from ddtw_ml.validation import check_column_existence, check_path
 
 
 class PreprocessData:
-    def __init__(self, filepath, first_column, second_column, third_column):
+    def __init__(self, filepath, first_column, second_column, third_column, fourth_column=None):
         """
         Method to initialize params of a class.
         :param filepath: path of a CSV file with the signals.
         :param first_column: name of a first column to analyse.
         :param second_column: name of a second column to analyse.
+        :param third_column: name of a third column, not cleaned, only trimmed like the first and second signal.
+        :param fourth_column: name of an optional fourth column, treated like the third one (None: not used).
         :raise FileNotFoundError: if a file is not found.
         :raise IsADirectoryError: if a path exists but leads to, for example, directory instead of a file.
         :raise ValueError: if a file is not a CSV file.
@@ -34,10 +36,14 @@ class PreprocessData:
         check_column_existence(df=df, col=first_column)
         check_column_existence(df=df, col=second_column)
         check_column_existence(df=df, col=third_column)
+        if fourth_column is not None:
+            check_column_existence(df=df, col=fourth_column)
         self.first_column, self.second_column, self.third_column = first_column, second_column, third_column
+        self.fourth_column = fourth_column
         s1, s2, s3 = self.__assign_signals(df=df, first_column=first_column, second_column=second_column,
                                            third_column=third_column)
         self.first_signal, self.second_signal, self.third_signal = s1, s2, s3
+        self.fourth_signal = df[fourth_column] if fourth_column is not None else None
 
     def get_first_signal(self):
         """
@@ -102,13 +108,22 @@ class PreprocessData:
         """
         return self.remove_outliers()[1]
 
+    def get_trim_limits(self):
+        """
+        Method to get the limits of the trimmed signals using the trim() function; the gaps of the first and second
+        signal set them.
+        :return: positions of the first and after the last sample kept.
+        """
+        s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
+        return prepUtils.trim(s1, s2)
+
     def trim_signals(self):
         """
         Method to trim signals using the trim() function.
         :return: signals trimmed.
         """
         s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
-        start, stop = prepUtils.trim(s1, s2)
+        start, stop = self.get_trim_limits()
         return pd.Series(s1[start:stop]), pd.Series(s2[start:stop])
 
     def get_first_signal_trimmed(self):
@@ -264,16 +279,20 @@ class PreprocessData:
     def get_preprocessed_data(self):
         """
         Method to get the preprocessed data.
-        :return: DateTime and the smoothed first, second and (untrimmed, B-05) third signal, cut to the shortest one.
+        :return: DateTime and the smoothed first and second signal with the third (and fourth) signal trimmed at the
+        same positions; the first and second signal set the length.
         """
         datetime, col1, col2, col3 = "DateTime", self.first_column, self.second_column, self.third_column
-        s1, s2, s3 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed(), self.get_third_signal()
-        min_len = min(len(s1), len(s2), len(s3))
+        s1, s2 = self.get_first_signal_smoothed(), self.get_second_signal_smoothed()
+        start, stop = self.get_trim_limits()
+        min_len = min(len(s1), len(s2))
         datetime_values = np.linspace(0, len(s1), len(s1))
         data = {
             datetime: datetime_values[:min_len],
             col1: s1[:min_len],
             col2: s2[:min_len],
-            col3: s3[:min_len]
+            col3: self.get_third_signal().iloc[start:stop].to_numpy()[:min_len]
         }
+        if self.fourth_column is not None:
+            data[self.fourth_column] = self.fourth_signal.iloc[start:stop].to_numpy()[:min_len]
         return pd.DataFrame(data)

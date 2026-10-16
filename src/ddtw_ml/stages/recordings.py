@@ -1,8 +1,8 @@
 """
 @author: Radoslaw Plawecki
 Stage `recordings` (raw -> recordings): reads the raw recordings of every condition, in one of the three CSV formats
-of the measuring equipment (FILE_FORMATS), and writes DateTime, ABP, CBFV = max(FV left, FV right) and BPM per subject:
-{condition}/V{i}_{condition}.csv.
+of the measuring equipment (FILE_FORMATS), and writes DateTime, ABP, CBFV = max(FV left, FV right), BPM and ETCO2
+per subject: {condition}/V{i}_{condition}.csv.
 The subject number i is the position of the raw file in the sorted directory listing (M-03), so it does not depend
 on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the mapping is written to the log.
 """
@@ -23,7 +23,8 @@ FILE_FORMATS = [
             "abp": "abp_cnap[mmHg]",
             "fv_l": "fvl",
             "fv_r": "fvr",
-            "bpm":  "rr[rpm]"
+            "bpm":  "rr[rpm]",
+            "etco2": "etco2[mmHg]"
         }
     },
     {
@@ -34,7 +35,8 @@ FILE_FORMATS = [
             "abp": "abp_finger[abp_finger]",
             "fv_l": "fv_l[fv_l]",
             "fv_r": "fv_r[fv_r]",
-            "bpm": "rr[rr]"
+            "bpm": "rr[rr]",
+            "etco2": "etco2[etco2]"
         }
     },
     {
@@ -45,7 +47,8 @@ FILE_FORMATS = [
             "abp": "abp_finger[mm_Hg]",
             "fv_l": "fv_l[]",
             "fv_r": "fv_r[]",
-            "bpm": "rr[bpm]"
+            "bpm": "rr[bpm]",
+            "etco2": "etco2[mm_Hg]"
         }
     }
 ]
@@ -82,7 +85,8 @@ def load_signals(file_path):
             abp = df[cols["abp"]]
             cbfv = calculate_cbfv(df, cols["fv_l"], cols["fv_r"])
             bpm = df[cols["bpm"]]
-            return datetime, abp, cbfv, bpm
+            etco2 = df[cols["etco2"]]
+            return datetime, abp, cbfv, bpm, etco2
         except Exception:
             continue
     raise ValueError(f"No matching format for file: {file_path}")
@@ -100,7 +104,7 @@ class ImportRecordings(Stage):
             for i, file in enumerate(sorted(os.listdir(directory_path)), start=1):
                 file_path = directory_path / file
                 try:
-                    datetime, abp, cbfv, bpm = load_signals(str(file_path))
+                    datetime, abp, cbfv, bpm, etco2 = load_signals(str(file_path))
                 except Exception as e:
                     ctx.reject(file_path, directory, f"{type(e).__name__}: {e}")
                     continue
@@ -108,7 +112,8 @@ class ImportRecordings(Stage):
                     "DateTime": datetime,
                     "ABP": abp,
                     "CBFV": cbfv,
-                    "BPM": bpm
+                    "BPM": bpm,
+                    "ETCO2": etco2
                 })
                 new_df.to_csv(out_dir / f"V{i}_{directory}.csv", sep=";", index=False)
                 ctx.processed(f"{directory}/{file} -> V{i}_{directory}.csv")

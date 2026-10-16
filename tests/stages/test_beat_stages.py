@@ -4,6 +4,7 @@ Tests of the beat stages (beats, paired, normalised) on small synthetic data.
 
 import math
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -80,7 +81,7 @@ def test_compute_beat_metrics(config, make_ctx):
     src = config.stage_dir("filtered") / "B6"
     src.mkdir(parents=True)
     t = np.arange(3000) / 200
-    df = pd.DataFrame({"DateTime": t, "ABP": 90 + 15 * np.sin(2 * np.pi * 1.2 * t),
+    df = pd.DataFrame({"DateTime": t * 1000, "ABP": 90 + 15 * np.sin(2 * np.pi * 1.2 * t),
                        "CBFV": 60 + 20 * np.sin(2 * np.pi * 1.2 * t + 0.3)})
     df.to_csv(src / "V1_B6_PP_F.csv", sep=";", index=False)
     ComputeBeatMetrics(make_ctx("beats")).run()
@@ -90,6 +91,20 @@ def test_compute_beat_metrics(config, make_ctx):
         expected = pd.DataFrame(FromSignal(df["DateTime"], df[name], signal_type).get_metrics())
         pd.testing.assert_frame_equal(out, expected, check_dtype=False)
         assert len(out) > 10
+        # RR in ms: one beat every 1 / 1.2 s, i.e. 833 ms, up to one sample (5 ms)
+        assert np.abs(out[f"{name}_RR"] - 1000 / 1.2).max() <= 5
+
+
+def test_metric_positions_and_window_plots_are_in_ms(tmp_path, no_latex, monkeypatch):
+    t = np.arange(3000) / 200
+    from_signal = FromSignal(t * 1000, 90 + 15 * np.sin(2 * np.pi * 1.2 * t), "abp")
+    spp_locs, _ = from_signal.find_spp()
+    np.testing.assert_array_equal(from_signal.to_time(spp_locs), np.array(spp_locs) * 5)
+    assert np.isnan(from_signal.to_time([np.nan, 2])).tolist() == [True, False]
+    monkeypatch.setattr(plt, "show", lambda: None)
+    from_signal.plot_window(1, output_path=tmp_path / "window.pdf")
+    from_signal.plot_pulsation(1, output_path=tmp_path / "pulsation.svg")
+    assert (tmp_path / "window.pdf").exists() and (tmp_path / "pulsation.svg").exists()
 
 
 def write_beats(directory, n_abp, n_cbfv):

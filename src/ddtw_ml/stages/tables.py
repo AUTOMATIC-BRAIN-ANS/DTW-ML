@@ -1,9 +1,10 @@
 """
 @author: Radosław Pławecki
-Stage `tables` (paired -> tables): medians of the beat-to-beat metrics per subject, for the subjects present in all
-conditions:
-- metrics_for_anova.csv -- one row per subject, columns {condition}_{ABP,CBFV}_{metric} (input of `metric_anova`),
-- medians_iqr.csv -- per condition, median and IQR of these medians over the subjects as LaTeX strings.
+Stage `tables` (paired, filtered -> tables): medians of the beat-to-beat metrics and the mean EtCO2 (filtered
+signals, NaN skipped) per subject, for the subjects present in all conditions:
+- metrics_for_anova.csv -- one row per subject, columns {condition}_{ABP,CBFV}_{metric} (input of `metric_anova`) and
+  {condition}_ETCO2,
+- medians_iqr.csv -- per condition, median and IQR of these values over the subjects as LaTeX strings.
 """
 
 import os
@@ -20,7 +21,7 @@ def subject_id(file: str) -> str:
 class TabulateMedians(Stage):
     def run(self) -> None:
         ctx = self.ctx
-        input_path = ctx.input()
+        input_path, signals_path = ctx.input("paired"), ctx.input("filtered")
         # baseline first, then the paced conditions in the order of the config
         conditions = sorted(ctx.analysis["conditions"], key=lambda c: c != "BAS")
         columns = [f"{signal}_{metric}" for metric in ctx.analysis["metrics"] for signal in ("ABP", "CBFV")]
@@ -34,7 +35,9 @@ class TabulateMedians(Stage):
                 if subject_id(file) not in allowed_ids:
                     continue
                 df = pd.read_csv(input_path / condition / file, delimiter=';')
-                medians.append({col: df[col].median() for col in columns})
+                signals = pd.read_csv(signals_path / condition / f"{subject_id(file)}_{condition}_PP_F.csv",
+                                      delimiter=';')
+                medians.append({**{col: df[col].median() for col in columns}, "ETCO2": signals["ETCO2"].mean()})
             per_condition.append(pd.DataFrame(medians).add_prefix(f"{condition}_"))
         merged = pd.concat(per_condition, axis=1)
         out_dir = ctx.output()
@@ -43,7 +46,7 @@ class TabulateMedians(Stage):
 
         rows = {}
         for condition, df in zip(conditions, per_condition):
-            df.columns = columns
+            df.columns = columns + ["ETCO2"]
             median, q1, q3 = df.median(), df.quantile(0.25), df.quantile(0.75)
             rows[condition] = ("$" + median.round(3).astype(str) + "$ $(" + q1.round(3).astype(str) + r"\text{-}"
                                + q3.round(3).astype(str) + ")$")

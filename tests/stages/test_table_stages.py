@@ -27,6 +27,11 @@ def write_paired(config):
             df["ABP_SPO"] += shift[condition]
             df.insert(0, "DateTime", range(1, 51))
             df.to_csv(directory / f"V{v}_{condition}_PP_F_M.csv", sep=";", index=False)
+            # filtered signals: ETCO2 = 30 + subject number + shift / 10, one NaN
+            signals = config.stage_dir("filtered") / condition
+            signals.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame({"DateTime": np.arange(4) * 5, "ETCO2": [30 + v + shift[condition] / 10] * 3 + [np.nan]}
+                         ).to_csv(signals / f"V{v}_{condition}_PP_F.csv", sep=";", index=False)
 
 
 def test_tables_and_metric_anova(config, make_ctx):
@@ -39,9 +44,13 @@ def test_tables_and_metric_anova(config, make_ctx):
                                          "BAS_CBFV_RR"]
     v1 = pd.read_csv(config.stage_dir("paired") / "B10" / "V1_B10_PP_F_M.csv", sep=";")
     assert medians.loc[0, "B10_CBFV_SPP"] == pytest.approx(v1["CBFV_SPP"].median(), rel=1e-12)
+    # mean EtCO2 of each subject, NaN skipped
+    assert medians["B10_ETCO2"].tolist() == pytest.approx([32 + v for v in range(1, 7)])
+    assert medians["BAS_ETCO2"].tolist() == pytest.approx([30 + v for v in range(1, 7)])
     table = pd.read_csv(config.stage_dir("tables") / "medians_iqr.csv", sep=";", index_col=0)
     assert list(table.index) == ["BAS", "B6", "B10", "B15"]
     assert "\\text{-}" in table.loc["B6", "ABP_RR"] and "\t" not in table.loc["B6", "ABP_RR"]
+    assert table.loc["B10", "ETCO2"].startswith("$35.5$")
 
     CompareMetricMedians(make_ctx("metric_anova")).run()
     out = config.stage_dir("metric_anova")

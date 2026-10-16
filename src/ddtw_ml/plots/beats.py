@@ -23,13 +23,15 @@ VARIANTS = {
 COLOURS = {"SPO": "purple", "SPP": "green", "DN": "red", "DPP": "orange"}
 
 
-def plot_metrics(df: pd.DataFrame, m: str, titles: dict[str, str], height_ratios: list[float]) -> plt.Figure:
+def plot_metrics(df: pd.DataFrame, m: str, titles: dict[str, str], height_ratios: list[float],
+                 normalised: bool = False) -> plt.Figure:
     """
     Function to plot the metrics of one signal: two per row, the RR interval in a wide bottom row.
     :param df: metrics of one file.
     :param m: signal, "ABP" or "CBFV".
     :param titles: titles of the metrics plotted in the upper rows.
     :param height_ratios: height ratios of the rows.
+    :param normalised: whether the metrics are normalised (no units).
     :return: figure.
     """
     datetime = df["DateTime"]
@@ -41,12 +43,12 @@ def plot_metrics(df: pd.DataFrame, m: str, titles: dict[str, str], height_ratios
         ax = fig.add_subplot(gs[k // 2, k % 2])
         ax.plot(datetime, df[f"{m}_{metric}"], color=COLOURS[metric])
         ax.set_title(title)
-        ax.set_ylabel(f"Value [{UNITS[m]}]")
+        ax.set_ylabel(f"Value [{'a.u.' if normalised else UNITS[m]}]")
         axes.append(ax)
     ax_rr = fig.add_subplot(gs[rows - 1, :])
     ax_rr.plot(datetime, df[f"{m}_RR"], color="darkolivegreen")
     ax_rr.set_title("RR interval")
-    ax_rr.set_ylabel("Value [s]")
+    ax_rr.set_ylabel(f"Value [{'a.u.' if normalised else 'ms'}]")
     for ax in axes + [ax_rr]:
         ax.set_xlim(left=datetime[0], right=len(datetime))
         ax.set_xlabel("Window [-]")
@@ -68,7 +70,7 @@ class PlotBeatMetrics(Stage):
                 for file in os.listdir(data_path / directory):
                     df = pd.read_csv(data_path / directory / file, delimiter=';')
                     for m in ("ABP", "CBFV"):
-                        fig = plot_metrics(df, m, titles, height_ratios)
+                        fig = plot_metrics(df, m, titles, height_ratios, normalised=key == "normalised")
                         fig.savefig(ctx.output(key, m.lower(), directory) / f"{os.path.splitext(file)[0]}.pdf",
                                     format="pdf")
                         plt.close(fig)
