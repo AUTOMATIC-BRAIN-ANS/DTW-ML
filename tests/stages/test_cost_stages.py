@@ -95,7 +95,9 @@ def test_cost_stages_in_sequence(normalised, make_ctx, settings):
         for method in ["td-method", "d-method"]:
             anova = pd.read_csv(config.stage_dir("anova") / pair / f"{method}_anova_results.csv", sep=";")
             posthoc = pd.read_csv(config.stage_dir("anova") / pair / f"{method}_posthoc_results.csv", sep=";")
-            assert list(anova.columns) == ["Source", "F", "p_unc", "ng2"]
+            assert list(anova.columns) == ["Source", "F", "p_unc", "ng2", "eps", "p_GG_corr", "W_spher", "p_spher",
+                                           "sphericity"]
+            assert 1 / 3 <= anova["eps"].iloc[0] <= 1 and 0 <= anova["p_GG_corr"].iloc[0] <= 1
             assert len(posthoc) == 6
 
 

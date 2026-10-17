@@ -4,6 +4,7 @@ Tests of the stages of the metric medians (tables, metric_anova) on small synthe
 
 import numpy as np
 import pandas as pd
+import pingouin as pg
 import pytest
 
 from ddtw_ml.stages.metric_anova import CompareMetricMedians
@@ -58,5 +59,12 @@ def test_tables_and_metric_anova(config, make_ctx):
         f"{s}_{m}_anova.csv" for s in ("ABP", "CBFV") for m in ("SPO", "SPP", "RR"))
     anova = pd.read_csv(out / "ABP_SPO_anova.csv", sep=";", index_col=0)
     assert anova["Pr > F"].iloc[0] < 0.05
+    # sphericity columns agree with pingouin.rm_anova on the same data
+    long = medians.rename_axis("Subject").reset_index().melt(id_vars="Subject",
+                                                             value_vars=[f"{c}_ABP_SPO" for c in CONDITIONS])
+    expected = pg.rm_anova(dv="value", within="variable", subject="Subject", data=long, correction=True)
+    for column in ["eps", "p_GG_corr", "W_spher", "p_spher"]:
+        assert anova[column].iloc[0] == pytest.approx(expected[column].iloc[0], rel=1e-9)
+    assert anova["sphericity"].iloc[0] == expected["sphericity"].iloc[0]
     posthoc = pd.read_csv(out / "ABP_SPO_posthoc.csv", sep=";")
     assert len(posthoc) == 6 and posthoc["significant"].all()

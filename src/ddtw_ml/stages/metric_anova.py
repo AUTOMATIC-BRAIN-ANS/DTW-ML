@@ -1,18 +1,40 @@
 """
 @author: Radosław Pławecki
 Stage `metric_anova` (tables -> metric_anova): RM-ANOVA of the per-subject medians of every metric of [analysis]
-metrics between the conditions, for ABP and CBFV: {signal}_{metric}_anova.csv; if p < alpha (settings.toml), also the
+metrics between the conditions, for ABP and CBFV: {signal}_{metric}_anova.csv (with the Greenhouse-Geisser corrected p
+and Mauchly's test of sphericity); if the uncorrected p < alpha (settings.toml), also the
 paired t-tests with the Bonferroni correction: {signal}_{metric}_posthoc.csv.
 """
 
 import itertools
 
 import pandas as pd
+import pingouin as pg
+from scipy.stats import f as f_dist
 from scipy.stats import ttest_rel
 from statsmodels.stats.anova import AnovaRM
 from statsmodels.stats.multitest import multipletests
 
 from ddtw_ml.pipeline import Stage
+
+
+def add_sphericity(table: pd.DataFrame, df_wide: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add the Greenhouse-Geisser correction and Mauchly's test of sphericity to an ANOVA table of AnovaRM, with
+    the column names of pingouin.rm_anova.
+    :param table: ANOVA table of AnovaRM (one within factor).
+    :param df_wide: data of the ANOVA, one column per condition and one row per subject.
+    :return: table with the columns eps, p_GG_corr, W_spher, p_spher and sphericity.
+    """
+    eps = pg.epsilon(df_wide, correction="gg")
+    spher = pg.sphericity(df_wide)
+    table = table.copy()
+    table["eps"] = eps
+    table["p_GG_corr"] = f_dist.sf(table["F Value"], eps * table["Num DF"], eps * table["Den DF"])
+    table["W_spher"] = spher.W
+    table["p_spher"] = spher.pval
+    table["sphericity"] = spher.spher
+    return table
 
 
 def post_hoc_tests(df_wide, conditions):
@@ -48,7 +70,7 @@ class CompareMetricMedians(Stage):
                 long = pd.melt(df, id_vars=["Subject"], value_vars=cols, var_name="Breath", value_name=signal)
                 long["Breath"] = long["Breath"].str.replace(f"_{signal}", "")
                 anova = AnovaRM(long, signal, "Subject", within=["Breath"]).fit()
-                anova.anova_table.to_csv(out_dir / f"{signal}_{metric}_anova.csv", sep=";")
+                add_sphericity(anova.anova_table, df[cols]).to_csv(out_dir / f"{signal}_{metric}_anova.csv", sep=";")
                 p = anova.anova_table["Pr > F"].iloc[0]
                 if p < ctx.params["alpha"]:
                     post_hoc_tests(df[cols], cols).to_csv(out_dir / f"{signal}_{metric}_posthoc.csv", sep=";",
