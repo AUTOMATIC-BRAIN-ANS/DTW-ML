@@ -60,7 +60,6 @@ class CompareMetricMedians(Stage):
         ctx = self.ctx
         df = pd.read_csv(ctx.input() / "metrics_for_anova.csv", sep=";")
         df.columns = df.columns.str.strip()
-        df["Subject"] = range(1, len(df) + 1)
         out_dir = ctx.output()
         # baseline first, then the paced conditions in the order of the config
         conditions = sorted(ctx.analysis["conditions"], key=lambda c: c != "BAS")
