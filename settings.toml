@@ -42,6 +42,15 @@ enabled = true
 
 [stages.cleaned]
 enabled = true
+# a recording is cleaned only if enough of it is usable: recorded at the paced breathing rate of its condition within
+# +-breath_tolerance breaths per minute (in the other conditions, BAS: all of it); the usable part must make up at least
+# min_usable_fraction of the recording and min_usable_duration seconds, otherwise the recording goes to the spoiled data
+# sampling frequency [Hz] and paced breaths per minute: the same as in [stages.filtered]
+fs = 200
+paced_breaths = { B6 = 6, B10 = 10, B15 = 15 }
+breath_tolerance = 2
+min_usable_fraction = 0.7
+min_usable_duration = 90
 
 [stages.filtered]
 enabled = true

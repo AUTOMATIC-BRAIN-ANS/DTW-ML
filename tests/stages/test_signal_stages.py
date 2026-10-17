@@ -9,6 +9,7 @@ import pytest
 from ddtw_ml.signal.artefacts import filter_abp
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
+from ddtw_ml.stages.cleaned.stage import count_usable
 from ddtw_ml.stages.filtered import RemoveBreathing, remove_freq
 from ddtw_ml.stages.recordings import ImportRecordings, calculate_cbfv, load_signals
 
@@ -96,14 +97,44 @@ def test_load_signals_reads_the_mm_hg_format_with_and_without_brackets(tmp_path,
 
 
 def test_clean_signals_writes_the_preprocessed_data(config, make_ctx):
-    src = config.stage_dir("recordings") / "B10"
+    src = config.stage_dir("recordings") / "B6"
     src.mkdir(parents=True)
-    synthetic_signals().to_csv(src / "V1_B10.csv", sep=";", index=False)
+    synthetic_signals(90 * FS).to_csv(src / "V1_B6.csv", sep=";", index=False)
     CleanSignals(make_ctx("cleaned")).run()
-    out = pd.read_csv(config.stage_dir("cleaned") / "B10" / "V1_B10_PP.csv", sep=";")
-    expected = PreprocessData(str(src / "V1_B10.csv"), "ABP", "CBFV", "BPM", "ETCO2").get_preprocessed_data()
+    out = pd.read_csv(config.stage_dir("cleaned") / "B6" / "V1_B6_PP.csv", sep=";")
+    expected = PreprocessData(str(src / "V1_B6.csv"), "ABP", "CBFV", "BPM", "ETCO2").get_preprocessed_data()
     pd.testing.assert_frame_equal(out, expected, check_exact=False, rtol=1e-12)
     assert list(out.columns) == ["DateTime", "ABP", "CBFV", "BPM", "ETCO2"]
+
+
+@pytest.mark.parametrize("directory, n, off_rate, kept", [
+    ("B6", 90 * FS, 0, True),  # 90 s at the paced rate
+    ("B6", 90 * FS - 1, 0, False),  # shorter than 90 s
+    ("B10", 90 * FS, 0, False),  # breathing at 6/min in B10: no usable signal
+    ("B6", 130 * FS, 39 * FS, True),  # 70% at the paced rate (91 s)
+    ("B6", 130 * FS, 39 * FS + 1, False),  # below 70%
+    ("BAS", 90 * FS, 0, True),  # not paced: all of it is usable
+    ("BAS", 90 * FS - 1, 0, False),
+])
+def test_clean_signals_rejects_recordings_with_too_little_usable_signal(config, make_ctx, directory, n, off_rate,
+                                                                        kept):
+    src = config.stage_dir("recordings") / directory
+    src.mkdir(parents=True)
+    signals = synthetic_signals(n)
+    # the first samples at 8.1 breaths/min: outside 6 +- 2
+    signals.loc[:off_rate - 1, "BPM"] = 8.1
+    signals.to_csv(src / f"V1_{directory}.csv", sep=";", index=False)
+    ctx = make_ctx("cleaned")
+    CleanSignals(ctx).run()
+    assert (config.stage_dir("cleaned") / directory / f"V1_{directory}_PP.csv").exists() == kept
+    assert (config.spoiled_dir() / directory / f"V1_{directory}.csv").exists() != kept
+    assert ctx.report.processed == int(kept)
+
+
+def test_count_usable_takes_the_rate_within_the_tolerance():
+    bpm = pd.Series([3.9, 4.0, 6.0, 8.0, 8.1, np.nan])
+    assert count_usable(bpm, 6, 2) == 3
+    assert count_usable(bpm, None, 2) == 6
 
 
 def test_clean_signals_trims_bpm_and_etco2_like_abp_and_cbfv(tmp_path):
