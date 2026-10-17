@@ -31,6 +31,9 @@ def clear_output(config: Config, node: Node, version: str) -> Path | None:
         of the stage.
     """
     out = output_dir(config, node, version).resolve()
+    if out.is_file():
+        out.unlink()
+        return out
     if not out.is_dir():
         return None
     protected = [config.raw_dir(), config.data_root, config.plots_root, config.data_root / version,

@@ -8,10 +8,11 @@ import logging
 import shutil
 import sys
 import types
+from dataclasses import replace
 
 import pytest
 
-from ddtw_ml.config import CONFIG_ENV, ConfigError, load_config, load_settings
+from ddtw_ml.config import CONFIG_ENV, ConfigError, Node, load_config, load_settings
 from ddtw_ml.log import PIPELINE_LOGGERS
 from ddtw_ml.pipeline import PipelineError, Stage, StageContext, StageReport
 from ddtw_ml.pipeline.orchestrator import Orchestrator
@@ -398,8 +399,8 @@ def test_run_needs_no_input(tmp_path):
     result = subprocess.run([sys.executable, str(REPO_ROOT / "main.py")], stdin=subprocess.DEVNULL, capture_output=True,
                             text=True, timeout=120, env=env)
     assert result.returncode == 0, result.stderr
-    # the 16 stages and the 3 plots (all enabled here)
-    assert "19 would run, 0 skipped" in result.stderr
+    # the 17 stages and the 3 plots (all enabled here)
+    assert "20 would run, 0 skipped" in result.stderr
     assert not (tmp_path / "data").exists()
 
 
@@ -479,3 +480,34 @@ def test_runs_are_ordered_by_their_number_not_by_the_clock(config, settings, cal
     assert calls == ["first", "second", "overview", "second", "overview"]
     state = read_state(config, "2.0")
     assert state["stage:first"]["run"] == 1 and state["plot:overview"]["run"] == 5
+
+
+def test_a_stage_can_write_one_file_in_the_version(config, settings, calls, log):
+    class Summary(Stage):
+        def run(self) -> None:
+            calls.append("summary")
+            self.ctx.output_file().write_text("x\n", encoding="utf-8")
+
+    node = Node(key="summary", kind="stage", description="", inputs=("first",), target="fake_stages.summary.Summary",
+                path="summary.csv")
+    config = replace(config, stages={**config.stages, "summary": node})
+    settings = replace(settings, sections={**settings.sections,
+                                           "stage": {**settings.sections["stage"], "summary": {"enabled": True}}})
+
+    def summary() -> Summary:
+        return Summary(StageContext(config, node, "2.0", settings))
+
+    run(config, settings, ["first"], log=log)
+    Orchestrator(config, log=log).run([summary()])
+    out = config.data_root / "2.0" / "summary.csv"
+    assert out.read_text(encoding="utf-8") == "x\n"
+    # done: skipped; forced: the file of the last run is removed before the stage runs
+    Orchestrator(config, log=log).run([summary()])
+    assert calls == ["first", "summary"]
+    out.write_text("stale\n", encoding="utf-8")
+    Orchestrator(config, log=log).run([summary()], force=True)
+    assert calls == ["first", "summary", "summary"] and out.read_text(encoding="utf-8") == "x\n"
+    with pytest.raises(PipelineError, match="is a file"):
+        summary().ctx.output()
+    with pytest.raises(PipelineError, match="is a directory"):
+        StageContext(config, config.stages["first"], "2.0", settings).output_file()

@@ -110,9 +110,27 @@ class StageContext:
         """
         if self.config.get_version(self.version).frozen:
             raise PipelineError(f"Version {self.version} is frozen; '{self.node.key}' cannot write to it.")
-        path = output_dir(self.config, self.node, self.version).joinpath(*parts)
+        out = output_dir(self.config, self.node, self.version)
+        if is_file_output(out):
+            raise PipelineError(f"The output of '{self.node.key}' is a file ({out.name}); use output_file().")
+        path = out.joinpath(*parts)
         os.makedirs(path, exist_ok=True)
         return path
+
+    def output_file(self) -> Path:
+        """
+        Method to get the output file of a stage whose output is one file (its path has an extension, e.g.
+        recordings_metadata.csv); its directory is created.
+        :return: path of the output file.
+        :raise PipelineError: if the version is frozen or the output of the stage is a directory.
+        """
+        if self.config.get_version(self.version).frozen:
+            raise PipelineError(f"Version {self.version} is frozen; '{self.node.key}' cannot write to it.")
+        out = output_dir(self.config, self.node, self.version)
+        if not is_file_output(out):
+            raise PipelineError(f"The output of '{self.node.key}' is a directory ({out}); use output().")
+        os.makedirs(out.parent, exist_ok=True)
+        return out
 
     def processed(self, name: str) -> None:
         """
@@ -221,13 +239,22 @@ def has_type(value: Any, expected: type) -> bool:
     raise TypeError(f"Unsupported type of a parameter: {expected}")
 
 
+def is_file_output(path: Path) -> bool:
+    """
+    Function to check whether the output of a stage is one file: its path has an extension (e.g. .csv).
+    :param path: output path of the stage (see output_dir()).
+    :return: True for a file, False for a directory.
+    """
+    return path.suffix != ""
+
+
 def output_dir(config: Config, node: Node, version: str) -> Path:
     """
-    Function to get the output directory of a stage or plot.
+    Function to get the output directory of a stage or plot (or its output file, see is_file_output()).
     :param config: configuration.
     :param node: stage or plot.
     :param version: data version.
-    :return: path of the output directory.
+    :return: path of the output directory (or file).
     """
     if node.kind == "plot":
         return config.plot_dir(node.key, version)

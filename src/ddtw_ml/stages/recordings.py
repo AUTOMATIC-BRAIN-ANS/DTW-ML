@@ -4,11 +4,13 @@ Stage `recordings` (raw -> recordings): reads the raw recordings of every condit
 of the measuring equipment (FILE_FORMATS), and writes DateTime, ABP, CBFV = max(FV left, FV right), BPM and ETCO2
 per subject: {condition}/V{i:02d}_{condition}.csv (V01, V02, ..., V10, ...).
 The subject number i is the position of the raw file in the sorted directory listing, so it does not depend
-on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the mapping is written to the log.
+on the file system (os.listdir is alphabetical on NTFS, arbitrary on ext4); the mapping is written to the log
+(and by the stage recordings_metadata to recordings_metadata.csv, see subject_files()).
 The two digits keep the subjects in their numerical order when the file names are sorted.
 """
 
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,7 +18,7 @@ import pandas as pd
 from ddtw_ml.pipeline import Stage
 from ddtw_ml.signal.artefacts import filter_fv
 
-FILE_FORMATS = [
+FILE_FORMATS: list[dict[str, Any]] = [
     {
         "delimiter": ";",
         "decimal": ",",
@@ -81,23 +83,41 @@ def calculate_cbfv(df, col_fvl, col_fvr):
     return pd.Series(np.fmax(fvl.to_numpy(dtype=float), fvr.to_numpy(dtype=float)), index=df.index)
 
 
-def load_signals(file_path):
-    for fmt in FILE_FORMATS:
+def read_raw(file_path) -> tuple[pd.DataFrame, int]:
+    """
+    Function to read a raw recording in the first of FILE_FORMATS that has all its columns.
+    :param file_path: path of the raw CSV file.
+    :return: data and the position of its format in FILE_FORMATS.
+    :raise ValueError: if no format matches.
+    """
+    for i, fmt in enumerate(FILE_FORMATS):
         try:
             df = pd.read_csv(file_path, delimiter=fmt["delimiter"], decimal=fmt["decimal"])
-            cols = fmt["columns"]
-            required = cols.values()
-            if not all(col in df.columns for col in required):
-                continue
-            datetime = df[cols["datetime"]]
-            abp = df[cols["abp"]]
-            cbfv = calculate_cbfv(df, cols["fv_l"], cols["fv_r"])
-            bpm = df[cols["bpm"]]
-            etco2 = df[cols["etco2"]]
-            return datetime, abp, cbfv, bpm, etco2
         except Exception:
             continue
+        if all(col in df.columns for col in fmt["columns"].values()):
+            return df, i
     raise ValueError(f"No matching format for file: {file_path}")
+
+
+def load_signals(file_path):
+    df, i = read_raw(file_path)
+    cols = FILE_FORMATS[i]["columns"]
+    datetime = df[cols["datetime"]]
+    abp = df[cols["abp"]]
+    cbfv = calculate_cbfv(df, cols["fv_l"], cols["fv_r"])
+    bpm = df[cols["bpm"]]
+    etco2 = df[cols["etco2"]]
+    return datetime, abp, cbfv, bpm, etco2
+
+
+def subject_files(directory_path) -> list[tuple[str, str]]:
+    """
+    Function to number the subjects of a condition: the position of the raw file in the sorted directory listing.
+    :param directory_path: directory of the raw recordings of a condition.
+    :return: (subject, raw file name) in order: [("V01", "OCH_12_CLEAN_CB_6.csv"), ...].
+    """
+    return [(f"V{i:02d}", file) for i, file in enumerate(sorted(os.listdir(directory_path)), start=1)]
 
 
 class ImportRecordings(Stage):
@@ -109,7 +129,7 @@ class ImportRecordings(Stage):
             if not directory_path.is_dir():
                 continue
             out_dir = ctx.output(directory)
-            for i, file in enumerate(sorted(os.listdir(directory_path)), start=1):
+            for subject, file in subject_files(directory_path):
                 file_path = directory_path / file
                 try:
                     datetime, abp, cbfv, bpm, etco2 = load_signals(str(file_path))
@@ -123,6 +143,5 @@ class ImportRecordings(Stage):
                     "BPM": bpm,
                     "ETCO2": etco2
                 })
-                subject = f"V{i:02d}"
                 new_df.to_csv(out_dir / f"{subject}_{directory}.csv", sep=";", index=False)
                 ctx.processed(f"{directory}/{file} -> {subject}_{directory}.csv")

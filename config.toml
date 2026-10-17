@@ -95,6 +95,13 @@ description = "Normalised metrics of the subjects present in all conditions (the
 input = ["normalised"]
 class = "ddtw_ml.stages.aligned.AlignSubjects"
 
+# a path with an extension is one file in the directory of the version, outside the stage directories
+[stages.recordings_metadata]
+description = "One row per raw recording: raw file and subject (V01 ...), checksum, start, length, cleaning, breathing, beats and the last stage reached"
+input = ["raw", "recordings", "cleaned", "filtered", "beats", "paired", "normalised", "aligned"]
+class = "ddtw_ml.stages.recordings_metadata.CollectRecordingMetadata"
+path = "recordings_metadata.csv"
+
 [stages.costs]
 description = "Sliding-window DDTW costs of the ABP-CBFV metric pairs: {method}/{condition}/..._PP_DTW.csv"
 input = ["aligned"]

@@ -5,6 +5,6 @@ Public interface: CleanSignals (stage.py), run by the orchestrator or on its own
 """
 
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
-from ddtw_ml.stages.cleaned.stage import CleanSignals
+from ddtw_ml.stages.cleaned.stage import CleanSignals, count_usable
 
-__all__ = ["CleanSignals", "PreprocessData"]
+__all__ = ["CleanSignals", "PreprocessData", "count_usable"]

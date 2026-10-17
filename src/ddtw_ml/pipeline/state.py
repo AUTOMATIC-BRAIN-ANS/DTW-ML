@@ -97,7 +97,7 @@ def is_done(config: Config, node: Node, version: str, state: dict[str, dict], ra
     :return: True if the stage can be skipped.
     """
     entry = state.get(state_key(node))
-    if entry is None or not output_dir(config, node, version).is_dir():
+    if entry is None or not output_dir(config, node, version).exists():
         return False
     if analysis is not None and analysis_changes(entry, analysis):
         return False
@@ -133,7 +133,7 @@ def describe(config: Config, kind: str = "stage", version: str | None = None,
         if is_done(config, node, v.name, state, analysis=analysis):
             status = f"done {state[state_key(node)]['finished']}"
         else:
-            status = "exists" if out.is_dir() else "missing"
+            status = "exists" if out.exists() else "missing"
         module = "" if module_available(node) else "  [module not implemented]"
-        lines.append(f"{i:2}. {key:<12} <- {', '.join(node.inputs):<22} {out} ({status}){module}")
+        lines.append(f"{i:2}. {key:<19} <- {', '.join(node.inputs):<22} {out} ({status}){module}")
     return lines

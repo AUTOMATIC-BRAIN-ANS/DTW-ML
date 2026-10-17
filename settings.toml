@@ -73,6 +73,13 @@ enabled = true
 [stages.aligned]
 enabled = true
 
+[stages.recordings_metadata]
+enabled = true
+# sampling frequency [Hz], paced breaths per minute and tolerance of the usable breathing: the same as in [stages.cleaned]
+fs = 200
+paced_breaths = { B6 = 6, B10 = 10, B15 = 15 }
+breath_tolerance = 2
+
 [stages.costs]
 enabled = true
 # sliding window of the DDTW alignment cost: length and step [beats]
