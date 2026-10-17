@@ -19,8 +19,9 @@ class AverageCostsPerSubject(Stage):
         out_dir = ctx.output()
         for metric in ctx.analysis["pairs"]:
             columns = []
-            for breath in os.listdir(data_path):
-                for method in os.listdir(data_path / breath):
+            # sorted: the order of the rows and columns does not depend on the file system (NTFS order as in 1.0)
+            for breath in sorted(os.listdir(data_path)):
+                for method in sorted(os.listdir(data_path / breath)):
                     final_path = data_path / breath / method / f"{metric}.csv"
                     df = pd.read_csv(final_path, delimiter=';')
                     columns.append(df.mean().rename(f"{breath}_{method}"))
