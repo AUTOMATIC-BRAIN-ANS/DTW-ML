@@ -1,6 +1,6 @@
 """
 @author: Radoslaw Plawecki
-Stage `recordings` (raw -> recordings): reads the raw recordings of every condition, in one of the three CSV formats
+Stage `recordings` (raw -> recordings): reads the raw recordings of every condition, in one of the four CSV formats
 of the measuring equipment (FILE_FORMATS), and writes DateTime, ABP, CBFV = max(FV left, FV right), BPM and ETCO2
 per subject: {condition}/V{i:02d}_{condition}.csv (V01, V02, ..., V10, ...).
 The subject number i is the position of the raw file in the sorted directory listing, so it does not depend
@@ -49,6 +49,18 @@ FILE_FORMATS = [
             "abp": "abp_finger[mm_Hg]",
             "fv_l": "fv_l[]",
             "fv_r": "fv_r[]",
+            "bpm": "rr[bpm]",
+            "etco2": "etco2[mm_Hg]"
+        }
+    },
+    {
+        "delimiter": ";",
+        "decimal": ",",
+        "columns": {
+            "datetime": "DateTime",
+            "abp": "abp_finger[mm_Hg]",
+            "fv_l": "fv_l",
+            "fv_r": "fv_r",
             "bpm": "rr[bpm]",
             "etco2": "etco2[mm_Hg]"
         }

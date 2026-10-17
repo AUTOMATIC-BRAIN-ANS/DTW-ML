@@ -10,7 +10,7 @@ from ddtw_ml.signal.artefacts import filter_abp
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
 from ddtw_ml.stages.filtered import RemoveBreathing, remove_freq
-from ddtw_ml.stages.recordings import ImportRecordings, calculate_cbfv
+from ddtw_ml.stages.recordings import ImportRecordings, calculate_cbfv, load_signals
 
 FS = 200
 
@@ -81,6 +81,18 @@ def test_import_recordings_numbers_subjects_and_rejects_unknown_formats(config, 
     assert not (config.stage_dir("recordings") / "B6" / "V02_B6.csv").exists()
     assert (config.spoiled_dir() / "B6" / "PAC_2.csv").exists()
     assert ctx.report.processed == 1 and len(ctx.report.rejected) == 1
+
+
+@pytest.mark.parametrize("fv_l, fv_r", [("fv_l[]", "fv_r[]"), ("fv_l", "fv_r")])
+def test_load_signals_reads_the_mm_hg_format_with_and_without_brackets(tmp_path, fv_l, fv_r):
+    s = synthetic_signals(200)
+    pd.DataFrame({"DateTime": s["DateTime"], fv_r: s["CBFV"], fv_l: s["CBFV"] + 1, "abp_finger[mm_Hg]": s["ABP"],
+                  "etco2[mm_Hg]": s["ETCO2"], "rr[bpm]": s["BPM"]}).to_csv(
+        tmp_path / "PAC_1.csv", sep=";", decimal=",", index=False)
+    datetime, abp, cbfv, bpm, etco2 = load_signals(str(tmp_path / "PAC_1.csv"))
+    np.testing.assert_allclose(abp, s["ABP"])
+    np.testing.assert_allclose(cbfv, s["CBFV"] + 1)
+    np.testing.assert_allclose(bpm, s["BPM"])
 
 
 def test_clean_signals_writes_the_preprocessed_data(config, make_ctx):
