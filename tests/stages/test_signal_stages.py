@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from ddtw_ml.signal.artefacts import filter_abp
+from ddtw_ml.signal.cleaning import PreprocessingUtils
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.cleaned.cleaning_chain import PreprocessData
 from ddtw_ml.stages.cleaned.stage import count_usable
@@ -105,6 +106,23 @@ def test_clean_signals_writes_the_preprocessed_data(config, make_ctx):
     expected = PreprocessData(str(src / "V1_B6.csv"), "ABP", "CBFV", "BPM", "ETCO2").get_preprocessed_data()
     pd.testing.assert_frame_equal(out, expected, check_exact=False, rtol=1e-12)
     assert list(out.columns) == ["DateTime", "ABP", "CBFV", "BPM", "ETCO2"]
+
+
+def test_cleaning_chain_computes_every_step_once(tmp_path, monkeypatch):
+    synthetic_signals().to_csv(tmp_path / "V1_B6.csv", sep=";", index=False)
+    calls = {"iqr_outlier_removal": 0, "trim": 0, "interpolate_data": 0, "smooth": 0}
+    for name in calls:
+        original = getattr(PreprocessingUtils, name)
+
+        def counted(*args, _original=original, _name=name, **kwargs):
+            calls[_name] += 1
+            return _original(*args, **kwargs)
+        monkeypatch.setattr(PreprocessingUtils, name, staticmethod(counted))
+    prep = PreprocessData(str(tmp_path / "V1_B6.csv"), "ABP", "CBFV", "BPM", "ETCO2")
+    prep.get_preprocessed_data()
+    prep.get_first_signal_trimmed(), prep.get_second_signal_interpolated()
+    # once per signal (trim: once for both)
+    assert calls == {"iqr_outlier_removal": 2, "trim": 1, "interpolate_data": 2, "smooth": 2}
 
 
 @pytest.mark.parametrize("directory, n, off_rate, kept", [

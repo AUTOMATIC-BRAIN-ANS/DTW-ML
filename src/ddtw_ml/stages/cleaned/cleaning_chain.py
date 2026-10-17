@@ -5,6 +5,7 @@ https://medium.com/@nirajan.acharya777/understanding-outlier-removal-using-inter
 """
 
 import os
+from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -90,19 +91,29 @@ class PreprocessData:
         s1, s2 = self.get_first_signal(), self.get_second_signal()
         return prepUtils.iqr_outlier_removal(s1, threshold), prepUtils.iqr_outlier_removal(s2, threshold)
 
+    # every step of the chain below is computed once per instance; the returned signals must not be modified
+    @cached_property
+    def _outliers_removed(self):
+        return self.remove_outliers()
+
     def get_first_signal_outliers_removed(self):
         """
         Getter to get a first signal with removed outliers.
         :return: first signal without outliers.
         """
-        return self.remove_outliers()[0]
+        return self._outliers_removed[0]
 
     def get_second_signal_outliers_removed(self):
         """
         Getter to get a second signal with removed outliers.
         :return: second signal without outliers.
         """
-        return self.remove_outliers()[1]
+        return self._outliers_removed[1]
+
+    @cached_property
+    def _trim_limits(self):
+        s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
+        return prepUtils.trim(s1, s2)
 
     def get_trim_limits(self):
         """
@@ -110,8 +121,7 @@ class PreprocessData:
         signal set them.
         :return: positions of the first and after the last sample kept.
         """
-        s1, s2 = self.get_first_signal_outliers_removed(), self.get_second_signal_outliers_removed()
-        return prepUtils.trim(s1, s2)
+        return self._trim_limits
 
     def trim_signals(self):
         """
@@ -122,19 +132,23 @@ class PreprocessData:
         start, stop = self.get_trim_limits()
         return pd.Series(s1[start:stop]), pd.Series(s2[start:stop])
 
+    @cached_property
+    def _trimmed(self):
+        return self.trim_signals()
+
     def get_first_signal_trimmed(self):
         """
         Getter to get a first signal trimmed.
         :return: first signal trimmed.
         """
-        return self.trim_signals()[0]
+        return self._trimmed[0]
 
     def get_second_signal_trimmed(self):
         """
         Getter to get a second signal trimmed.
         :return: second signal trimmed.
         """
-        return self.trim_signals()[1]
+        return self._trimmed[1]
 
     def interpolate_signal(self, method=None, order=None):
         """
@@ -146,19 +160,23 @@ class PreprocessData:
         s1, s2 = self.get_first_signal_trimmed(), self.get_second_signal_trimmed()
         return prepUtils.interpolate_data(s1, method=method, order=order), prepUtils.interpolate_data(s2, method=method, order=order)
 
+    @cached_property
+    def _interpolated(self):
+        return self.interpolate_signal(method='linear')
+
     def get_first_signal_interpolated(self):
         """
         Getter to get a first, interpolated signal.
         :return: first, interpolated signal.
         """
-        return self.interpolate_signal(method='linear')[0]
+        return self._interpolated[0]
 
     def get_second_signal_interpolated(self):
         """
         Getter to get a second, interpolated signal.
         :return: second, interpolated signal.
         """
-        return self.interpolate_signal(method='linear')[1]
+        return self._interpolated[1]
 
     def normalize_signal(self, method, min_value=-1, max_value=1):
         """
@@ -172,19 +190,23 @@ class PreprocessData:
         return (prepUtils.normalize(s1, method=method, min_value=min_value, max_value=max_value),
                 prepUtils.normalize(s2, method=method, min_value=min_value, max_value=max_value))
 
+    @cached_property
+    def _normalized(self):
+        return self.normalize_signal(method='generalized-logistic')
+
     def get_first_signal_normalized(self):
         """
         Getter to get a first, preprocessed signal.
         :return: first, preprocessed signal.
         """
-        return self.normalize_signal(method='generalized-logistic')[0]
+        return self._normalized[0]
 
     def get_second_signal_normalized(self):
         """
         Getter to get a second, preprocessed signal.
         :return: second, preprocessed signal.
         """
-        return self.normalize_signal(method='generalized-logistic')[1]
+        return self._normalized[1]
 
     def smooth_signal(self):
         """
@@ -194,19 +216,23 @@ class PreprocessData:
         s1, s2 = self.get_first_signal_interpolated(), self.get_second_signal_interpolated()
         return prepUtils.smooth(s1), prepUtils.smooth(s2)
 
+    @cached_property
+    def _smoothed(self):
+        return self.smooth_signal()
+
     def get_first_signal_smoothed(self):
         """
         Getter to get a first, preprocessed signal.
         :return: first, preprocessed signal.
         """
-        return self.smooth_signal()[0]
+        return self._smoothed[0]
 
     def get_second_signal_smoothed(self):
         """
         Getter to get a second, preprocessed signal.
         :return: second, preprocessed signal.
         """
-        return self.smooth_signal()[1]
+        return self._smoothed[1]
 
     @staticmethod
     def get_time(s):

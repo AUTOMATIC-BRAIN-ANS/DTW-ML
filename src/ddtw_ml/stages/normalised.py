@@ -24,23 +24,30 @@ class PreprocessMetrics:
         check_path(filepath)
         self.filepath = filepath
         data = pd.read_csv(filepath, delimiter=';')
-        self.df = df = pd.DataFrame(data)
-        if label is not None and label not in df.columns:
-            raise ValueError(f"{label} isn't a label! Allowed values are: {list(df.columns)}.")
-        else:
-            self.label = label
+        self.df = pd.DataFrame(data)
+        if label is not None:
+            self.check_label(label)
+        self.label = label
 
-    def get_metric(self):
-        return self.df[self.label]
+    def check_label(self, label):
+        if label not in self.df.columns:
+            raise ValueError(f"{label} isn't a label! Allowed values are: {list(self.df.columns)}.")
 
-    def get_metric_outliers_removed(self):
-        return prepUtils.iqr_outlier_removal(self.df[self.label], threshold=1.5)
+    # label: column of the metric, by default the one given to the constructor
 
-    def get_metric_interpolated(self):
-        return prepUtils.interpolate_data(self.get_metric_outliers_removed(), method='linear')
+    def get_metric(self, label=None):
+        label = label or self.label
+        self.check_label(label)
+        return self.df[label]
 
-    def get_metric_normalized(self):
-        return pd.Series(prepUtils.normalize(self.get_metric_interpolated(), method='generalized-logistic'))
+    def get_metric_outliers_removed(self, label=None):
+        return prepUtils.iqr_outlier_removal(self.get_metric(label), threshold=1.5)
+
+    def get_metric_interpolated(self, label=None):
+        return prepUtils.interpolate_data(self.get_metric_outliers_removed(label), method='linear')
+
+    def get_metric_normalized(self, label=None):
+        return pd.Series(prepUtils.normalize(self.get_metric_interpolated(label), method='generalized-logistic'))
 
     def get_preprocessed_metrics(self):
         """
@@ -51,16 +58,16 @@ class PreprocessMetrics:
         datetime, abp_spo, abp_spp, abp_rr, cbfv_spo, cbfv_spp, cbfv_rr = ('DateTime', 'ABP_SPO', 'ABP_SPP', 'ABP_RR', 'CBFV_SPO', 'CBFV_SPP', 'CBFV_RR')
         data = {
             datetime: df['DateTime'],
-            abp_spo: PreprocessMetrics(self.filepath, label='ABP_SPO').get_metric_normalized(),
-            abp_spp: PreprocessMetrics(self.filepath, label='ABP_SPP').get_metric_normalized(),
-            abp_rr: PreprocessMetrics(self.filepath, label='ABP_RR').get_metric_normalized(),
-            cbfv_spo: PreprocessMetrics(self.filepath, label='CBFV_SPO').get_metric_normalized(),
-            cbfv_spp: PreprocessMetrics(self.filepath, label='CBFV_SPP').get_metric_normalized(),
-            cbfv_rr: PreprocessMetrics(self.filepath, label='CBFV_RR').get_metric_normalized()
-            # abp_dn: PreprocessMetrics(self.filepath, label='ABP_DN').get_metric_normalized(),
-            # abp_dpp: PreprocessMetrics(self.filepath, label='ABP_DPP').get_metric_normalized(),
-            # cbfv_dn: PreprocessMetrics(self.filepath, label='CBFV_DN').get_metric_normalized(),
-            # cbfv_dpp: PreprocessMetrics(self.filepath, label='CBFV_DPP').get_metric_normalized()
+            abp_spo: self.get_metric_normalized(abp_spo),
+            abp_spp: self.get_metric_normalized(abp_spp),
+            abp_rr: self.get_metric_normalized(abp_rr),
+            cbfv_spo: self.get_metric_normalized(cbfv_spo),
+            cbfv_spp: self.get_metric_normalized(cbfv_spp),
+            cbfv_rr: self.get_metric_normalized(cbfv_rr)
+            # abp_dn: self.get_metric_normalized('ABP_DN'),
+            # abp_dpp: self.get_metric_normalized('ABP_DPP'),
+            # cbfv_dn: self.get_metric_normalized('CBFV_DN'),
+            # cbfv_dpp: self.get_metric_normalized('CBFV_DPP')
         }
         return pd.DataFrame(data)
 

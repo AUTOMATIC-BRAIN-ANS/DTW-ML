@@ -155,3 +155,18 @@ def test_normalise_beat_metrics(config, make_ctx):
     assert list(out.columns) == ["DateTime", "ABP_SPO", "ABP_SPP", "ABP_RR", "CBFV_SPO", "CBFV_SPP", "CBFV_RR"]
     # the file without CBFV_RR fails and is copied to the spoiled data
     assert ctx.report.processed == 1 and (config.spoiled_dir() / "B10" / "V2_B10_PP_F_M.csv").exists()
+    assert "CBFV_RR isn't a label" in (config.spoiled_dir() / "B10" / "_failures.csv").read_text(encoding="utf-8")
+
+
+def test_preprocess_metrics_reads_the_file_once(tmp_path, monkeypatch):
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({c: (np.arange(200) if c == "DateTime" else rng.normal(100, 10, 200)) for c in METRICS})
+    df.to_csv(tmp_path / "V1_B10_PP_F_M.csv", sep=";", index=False)
+    reads = []
+    original = pd.read_csv
+    monkeypatch.setattr(pd, "read_csv", lambda *args, **kwargs: reads.append(args) or original(*args, **kwargs))
+    metrics = PreprocessMetrics(str(tmp_path / "V1_B10_PP_F_M.csv")).get_preprocessed_metrics()
+    assert len(reads) == 1
+    # every metric as if preprocessed alone
+    expected = PreprocessMetrics(str(tmp_path / "V1_B10_PP_F_M.csv"), label="ABP_RR").get_metric_normalized()
+    pd.testing.assert_series_equal(metrics["ABP_RR"], expected, check_names=False, check_exact=True)
