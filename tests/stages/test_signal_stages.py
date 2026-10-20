@@ -191,10 +191,33 @@ def test_remove_breathing_uses_the_paced_rate(config, make_ctx):
     out = pd.read_csv(config.stage_dir("filtered") / "B6" / "V1_B6_PP_F.csv", sep=";")
     assert list(out.columns) == ["DateTime", "ABP", "CBFV", "ETCO2"]
     signals = pd.read_csv(src / "V1_B6_PP.csv", sep=";")
-    np.testing.assert_allclose(out["ABP"], remove_freq(signals["ABP"], T=200, breaths=6))
+    np.testing.assert_allclose(out["ABP"], remove_freq(signals["ABP"], T=200, breaths=6, margin=0.02))
     # time of each sample in ms at 200 Hz; ETCO2 unchanged
     np.testing.assert_array_equal(out["DateTime"], np.arange(len(signals)) * 5)
     np.testing.assert_array_equal(out["ETCO2"], signals["ETCO2"])
+
+
+def test_remove_freq_zeroes_every_bin_of_the_band():
+    n = 60 * FS  # 60 s: bins every 1/60 Hz
+    t = np.arange(n) / FS
+    # a weak oscillation at 0.1 Hz (below the old amplitude threshold 0.75), 0.3 Hz outside the band
+    s = 0.2 * np.sin(2 * np.pi * 0.1 * t) + np.sin(2 * np.pi * 0.3 * t)
+    out = remove_freq(s, T=FS, breaths=6, margin=0.02)
+    np.testing.assert_allclose(out, np.sin(2 * np.pi * 0.3 * t), atol=1e-9)
+
+
+def test_remove_breathing_in_baseline_uses_the_subject_rate_and_its_sd(config, make_ctx):
+    src = config.stage_dir("cleaned") / "BAS"
+    src.mkdir(parents=True)
+    signals = synthetic_signals(60 * FS)
+    signals["BPM"] = np.where(np.arange(len(signals)) % 2, 13.2, 10.8)  # mean 12 (0.2 Hz), SD 1.2 (0.02 Hz)
+    signals.to_csv(src / "V1_BAS_PP.csv", sep=";", index=False)
+    RemoveBreathing(make_ctx("filtered")).run()
+    out = pd.read_csv(config.stage_dir("filtered") / "BAS" / "V1_BAS_PP_F.csv", sep=";")
+    expected = remove_freq(signals["ABP"], T=FS, breaths=12, margin=0.02)
+    np.testing.assert_allclose(out["ABP"], expected, rtol=1e-12)
+    # a band of the old half width 0.01 Hz would keep the bins at 0.2 +- 1/60 Hz
+    assert not np.allclose(expected, remove_freq(signals["ABP"], T=FS, breaths=12, margin=0.01))
 
 
 def test_cleaning_plot_data_shows_the_steps_of_the_chosen_signal(tmp_path):

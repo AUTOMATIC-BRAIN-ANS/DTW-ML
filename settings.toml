@@ -58,6 +58,9 @@ enabled = true
 fs = 200
 # breaths per minute of the paced conditions; in the other conditions (BAS): the mean recorded BPM
 paced_breaths = { B6 = 6, B10 = 10, B15 = 15 }
+# half width of the removed band around the paced rate [Hz] (+-1 breath/min = 0.017 Hz); in the other conditions (BAS):
+# the standard deviation of the recorded BPM / 60
+margin = 0.02
 
 [stages.beats]
 enabled = true
