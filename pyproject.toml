@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=84.0.0"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,8 +8,8 @@ version = "0.1.0"
 description = "ABP-CBFV analysis under paced breathing."
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.5.3",
-    "pandas>=3.0.6",
+    "numpy>=2.5.4",
+    "pandas>=3.1.0",
     "scipy>=1.18.1",
     "matplotlib>=3.11.2",
     "statsmodels>=0.15.0",
@@ -22,8 +22,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=9.1.1",
-    "ruff>=0.16.9",
-    "mypy>=2.3.1",
+    "ruff>=0.17.2",
+    "mypy>=2.4.0",
     "pandas-stubs>=3.0.5.260914",
     "scipy-stubs>=1.18.1.1",
 ]
