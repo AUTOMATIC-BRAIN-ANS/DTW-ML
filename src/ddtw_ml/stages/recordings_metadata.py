@@ -2,7 +2,8 @@
 Stage `recordings_metadata` (raw, recordings ... aligned -> recordings_metadata.csv): describes every raw recording in one
 row, for the methods of the work and to check the data: which raw file is which subject (V01 ...), its checksum and start
 time, its length, how much of it was removed or interpolated by the cleaning, how well the paced breathing was kept, the
-number of beats and the last stage the recording reached (with the reason of its rejection).
+number of beats, the signal-to-noise ratio of the beats and the last stage the recording reached (with the reason of
+its rejection).
 
 The statistics of the cleaning are computed again with the code of the stage cleaned (PreprocessData), on every
 recording, also on the ones that the breathing criterion rejects; the results of the pipeline do not change.
@@ -21,6 +22,7 @@ import pandas as pd
 
 from ddtw_ml.pipeline import Stage
 from ddtw_ml.signal.artefacts import filter_fv
+from ddtw_ml.stages.beats import FromSignal
 from ddtw_ml.stages.cleaned import PreprocessData, count_usable
 from ddtw_ml.stages.recordings import FILE_FORMATS, read_raw, subject_files
 
@@ -37,7 +39,9 @@ COLUMNS = ["condition", "subject", "raw_file", "raw_id", "raw_sha256", "raw_form
            "CBFV_left_pct", "CBFV_one_side_pct", "BPM_median", "BPM_iqr", "usable_breathing_s", "usable_breathing_pct",
            "ABP_impulses", "ABP_outliers_pct", "CBFV_outliers_pct", "trimmed_start_s", "trimmed_end_s", "kept_s",
            "ABP_interpolated_pct", "ABP_longest_gap_s", "CBFV_interpolated_pct", "CBFV_longest_gap_s", "ABP_beats",
-           "CBFV_beats", "paired_beats", "last_stage", "rejected_by", "reason"]
+           "CBFV_beats", "paired_beats", "ABP_SNR_dB", "CBFV_SNR_dB", "last_stage", "rejected_by", "reason"]
+# number of points every beat is resampled to before the SNR is computed
+SNR_POINTS = 100
 
 
 def raw_id(file: str) -> str:
@@ -137,6 +141,49 @@ def recording_stats(path: Path, fs: float, breaths: float | None, tolerance: flo
     return stats
 
 
+def beat_snr(signal: np.ndarray, onsets: list, points: int = SNR_POINTS) -> float:
+    """
+    Function to compute the signal-to-noise ratio of the beats of a recording: every beat (from its SPO to the next SPO)
+    is resampled to the given number of points and its mean is subtracted; the template is the pointwise median of the
+    beats. Signal = variance of the template, noise = mean variance of the residuals (beat minus template).
+    :param signal: signal (ABP or CBFV).
+    :param onsets: positions of the systolic phase onsets (SPO; NaN: not found, skipped).
+    :param points: number of points of a resampled beat.
+    :return: SNR [dB] (NaN if there are fewer than 2 beats).
+    """
+    locs = [int(loc) for loc in onsets if not np.isnan(loc)]
+    grid = np.linspace(0, 1, points)
+    beats = []
+    for start, end in zip(locs[:-1], locs[1:]):
+        if end - start < 2:
+            continue
+        beat = signal[start:end + 1]
+        beat = np.interp(grid, np.linspace(0, 1, len(beat)), beat)
+        beats.append(beat - beat.mean())
+    if len(beats) < 2:
+        return np.nan
+    beats_array = np.array(beats)
+    template = np.median(beats_array, axis=0)
+    noise = np.mean(np.var(beats_array - template, axis=1))
+    return float(10 * np.log10(np.var(template) / noise))
+
+
+def filtered_snr(path: Path) -> dict:
+    """
+    Function to compute the SNR of the beats of ABP and CBFV of a recording of the stage filtered, with the beats
+    detected as in the stage beats (FromSignal).
+    :param path: path of the filtered recording.
+    :return: ABP_SNR_dB and CBFV_SNR_dB.
+    """
+    df = pd.read_csv(path, delimiter=";")
+    stats = {}
+    for col in ("ABP", "CBFV"):
+        beats = FromSignal(df["DateTime"], signal=df[col], signal_type=col)
+        onsets, _ = beats.find_spo()
+        stats[f"{col}_SNR_dB"] = beat_snr(beats.signal, onsets)
+    return stats
+
+
 def read_failures(spoiled: Path) -> dict[str, str]:
     """
     Function to read the reasons of the rejections recorded in the spoiled data (_failures.csv in every directory).
@@ -183,6 +230,12 @@ class CollectRecordingMetadata(Stage):
                     row[f"{key}_beats"] = len(pd.read_csv(beats, delimiter=";")) if beats.is_file() else np.nan
                 paired = ctx.input("paired") / condition / f"{name}_PP_F_M.csv"
                 row["paired_beats"] = len(pd.read_csv(paired, delimiter=";")) if paired.is_file() else np.nan
+                filtered = ctx.input("filtered") / condition / f"{name}_PP_F.csv"
+                if filtered.is_file():
+                    try:
+                        row.update(filtered_snr(filtered))
+                    except Exception as e:
+                        ctx.log.warning(f"{filtered.name}: SNR not computed ({type(e).__name__}: {e})")
                 row.update(self.fate(condition, file, name, failures))
                 rows.append(row)
                 ctx.processed(f"{condition}/{file} -> {subject} ({row['last_stage'] or 'not read'})")

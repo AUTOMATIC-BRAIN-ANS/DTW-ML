@@ -11,7 +11,7 @@ import pytest
 
 from ddtw_ml.stages.cleaned import CleanSignals
 from ddtw_ml.stages.recordings import ImportRecordings
-from ddtw_ml.stages.recordings_metadata import CollectRecordingMetadata, longest_run, raw_id
+from ddtw_ml.stages.recordings_metadata import SNR_POINTS, CollectRecordingMetadata, beat_snr, longest_run, raw_id
 from tests.stages.test_signal_stages import FS, synthetic_signals
 
 
@@ -85,6 +85,24 @@ def test_the_metadata_warns_about_copies_and_subjects_that_differ_between_condit
     messages = [r.getMessage() for r in caplog.get_records("setup")]
     assert any("identical raw files: B6/PAC_1.csv, BAS/PAC_1.csv" in m for m in messages)
     assert any("V02 is not the same raw subject in all conditions (B6: PAC_2, BAS: PAC_3)" in m for m in messages)
+
+
+def test_beat_snr_is_the_ratio_of_the_template_variance_to_the_residual_variance():
+    rng = np.random.default_rng(0)
+    beat = np.sin(np.linspace(0, 2 * np.pi, SNR_POINTS))
+    onsets = list(range(0, 300 * (SNR_POINTS - 1) + 1, SNR_POINTS - 1))
+    clean = np.concatenate([beat[:-1]] * 300 + [beat[-1:]])
+    noise = 0.1 * rng.standard_normal(len(clean))
+    # beats of SNR_POINTS samples are not resampled: template = sine, residuals = noise minus its mean in the beat
+    assert beat_snr(clean + noise, onsets) == pytest.approx(10 * np.log10(np.var(beat) / 0.1 ** 2), abs=0.3)
+    assert beat_snr(clean + 2 * noise, onsets) < beat_snr(clean + noise, onsets)
+    assert np.isnan(beat_snr(clean, [0, np.nan, 100]))
+
+
+def test_the_metadata_has_the_snr_of_the_filtered_recordings(metadata):
+    assert {"ABP_SNR_dB", "CBFV_SNR_dB"} <= set(metadata.columns)
+    # the fixture has no filtered recordings
+    assert metadata["ABP_SNR_dB"].isna().all() and metadata["CBFV_SNR_dB"].isna().all()
 
 
 def test_raw_id_and_longest_run():
