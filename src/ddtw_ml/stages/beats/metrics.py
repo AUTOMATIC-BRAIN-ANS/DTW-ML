@@ -9,6 +9,59 @@ from scipy.signal import find_peaks
 from ddtw_ml.plotting import use_latex
 from ddtw_ml.stages.beats.troughs import detect_peaks_troughs_optimized
 
+# colours of the plots of the metrics: signal, SPO (violet), SPP and RR interval (green), grid and axes
+INK = "#2b2b2a"
+SPO_COLOUR = "#6250d6"
+SPP_COLOUR = "#008300"
+RR_COLOUR = "#008300"
+GRID = "#e1e0d9"
+AXIS = "#898781"
+UNITS = {"abp": "ABP [mmHg]", "cbfv": r"CBFV [$\mathrm{cm \cdot s^{-1}}$]"}
+
+
+def style_axes(ax):
+    """
+    Function to give the axes of a plot of the metrics a light style: horizontal hairline grid, no top and right spines.
+    :param ax: axes.
+    """
+    ax.grid(True, axis="y", color=GRID, linewidth=0.6, zorder=0)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color(AXIS)
+        ax.spines[side].set_linewidth(0.8)
+    ax.tick_params(colors=AXIS, labelcolor=INK, labelsize=9, width=0.8)
+
+
+def plot_cycle_metrics(abp, cbfv, abp_window, cbfv_window, output_path=None):
+    """
+    Function to plot a cardiac cycle of ABP and of CBFV with marked metrics (SPO, SPP, RR interval) on one figure;
+    the time of each panel starts at the SPO of its cycle.
+    :param abp: FromSignal of the ABP signal.
+    :param cbfv: FromSignal of the CBFV signal of the same recording.
+    :param abp_window: number of the ABP window (cycle).
+    :param cbfv_window: number of the CBFV window (cycle).
+    :param output_path: path of a file to save the plot to, format from its extension, e.g. PDF (None: shown instead).
+    """
+    use_latex()
+    fig, axes = plt.subplots(2, 1, figsize=(6.3, 5.6), sharex=True)
+    _, (abp_left, abp_right), _ = abp.draw_window(axes[0], abp_window)
+    _, (cbfv_left, cbfv_right), _ = cbfv.draw_window(axes[1], cbfv_window)
+    axes[1].set_xlim(min(abp_left, cbfv_left), max(abp_right, cbfv_right))
+    for ax, (letter, key) in zip(axes, (("a", "abp"), ("b", "cbfv"))):
+        ax.set_ylabel(UNITS[key], fontsize=10)
+        ax.set_title(rf"\textbf{{({letter})}} {key.upper()}", loc="left", fontsize=10, color=INK)
+    axes[1].set_xlabel("Time [ms]", fontsize=10)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=3, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    if output_path is not None:
+        fig.savefig(output_path, bbox_inches="tight", dpi=300)
+    else:
+        plt.show()
+    plt.close(fig)
+
 
 class FromSignal:
     def __init__(self, datetime, signal, signal_type):
@@ -142,73 +195,71 @@ class FromSignal:
             rr.append(self.datetime[spp_locs[i + 1]] - self.datetime[spp_locs[i]])
         return rr
 
+    def draw_window(self, ax, wd_number, t0=None):
+        """
+        Method to draw a cardiac cycle with marked metrics: the cycle from its SPO to the SPO of the next cycle and the
+        rise to the next SPP, with both SPO, both SPP and the RR interval between the SPP.
+        :param ax: axes to draw on.
+        :param wd_number: number of the window (cycle).
+        :param t0: time [ms] shown as 0 on the x axis (None: the SPO of the cycle).
+        :return: time [ms] of the SPO of the cycle, the shown time range [ms] relative to t0 and the RR interval [ms].
+        """
+        wd = self.wd
+        if wd_number is None or not 0 <= wd_number <= len(wd) - 3:
+            raise ValueError(f"The signal contains {len(wd) - 2} windows!")
+        i = wd_number
+        spp_locs, spp = self.find_spp()
+        spo_locs, spo = self.find_spo()
+        spp_t, spo_t = self.to_time(spp_locs), self.to_time(spo_locs)
+        t0 = spo_t[i] if t0 is None else t0
+        # from 80 ms before the SPO of the cycle to 120 ms after the SPP of the next cycle
+        start = max(int(np.searchsorted(self.datetime, spo_t[i] - 80)), 0)
+        end = int(np.searchsorted(self.datetime, spp_t[i + 1] + 120))
+        t, s = self.datetime[start:end] - t0, self.signal[start:end]
+        ax.plot(t, s, color=INK, linewidth=1.6, solid_capstyle="round", zorder=3)
+
+        y_range = s.max() - s.min()
+        gap = 0.05 * y_range
+        marker = dict(s=56, edgecolors="white", linewidths=1.0, zorder=4, clip_on=False)
+        ax.scatter(spo_t[i:i + 2] - t0, np.array(spo[i:i + 2]) - gap, marker="^", color=SPO_COLOUR, label="SPO",
+                   **marker)
+        ax.scatter(spp_t[i:i + 2] - t0, spp[i:i + 2] + gap, marker="v", color=SPP_COLOUR, label="SPP", **marker)
+
+        # RR interval: an arrow above both SPP with dashed guides down to the markers
+        rr = spp_t[i + 1] - spp_t[i]
+        y_arrow = max(spp[i], spp[i + 1]) + 3.2 * gap
+        for x, y in ((spp_t[i], spp[i]), (spp_t[i + 1], spp[i + 1])):
+            ax.plot([x - t0, x - t0], [y + 1.8 * gap, y_arrow + 0.6 * gap], color=RR_COLOUR, linewidth=0.8,
+                    linestyle=(0, (3, 2)), zorder=2)
+        ax.annotate("", xy=(spp_t[i + 1] - t0, y_arrow), xytext=(spp_t[i] - t0, y_arrow),
+                    arrowprops=dict(arrowstyle="<|-|>", color=RR_COLOUR, linewidth=1.2, mutation_scale=9,
+                                    shrinkA=0, shrinkB=0), zorder=4)
+        ax.plot([], [], color=RR_COLOUR, linewidth=1.2, label="R-R interval")
+        ax.text((spp_t[i] + spp_t[i + 1]) / 2 - t0, y_arrow + 0.6 * gap, f"R-R = {rr:.0f} ms", ha="center",
+                va="bottom", color=INK, fontsize=9)
+
+        ax.set_xlim(t[0], t[-1])
+        ax.set_ylim(s.min() - 3 * gap, y_arrow + 3 * gap)
+        style_axes(ax)
+        return spo_t[i], (t[0], t[-1]), rr
+
     def plot_window(self, wd_number=None, output_path=None):
         """
         Method to plot a specific window from a signal with marked metrics.
         :param wd_number: number of the window.
         :param output_path: path of a PDF file to save the plot to (None: not saved).
         """
-        signal_type = self.signal_type
-
         use_latex()
-        wd = self.wd
-        if wd_number > len(wd) - 2:
-            raise ValueError(f"The signal contains {len(wd) - 2} windows!")
-
-        i = wd_number
-        start, end = wd[i] - 3, wd[i + 1] + 103  # + 103 if abp
-        wd_datetime, wd_signal = self.datetime[start:end], self.signal[start:end]
-
-        sft = 0.7
-        # offset of the arrowheads of the RR interval: 2.5 samples
-        arrow = 2.5 * (self.datetime[1] - self.datetime[0])
-
-        plt.figure(figsize=(10, 6))
-        plt.grid(True, zorder=0)
-        plt.plot(wd_datetime, wd_signal, label=f"_{signal_type.upper()}", linewidth=2, zorder=3)
-        # positions of the metrics as time [ms], like the x axis
-        spp_locs, spp = self.find_spp()
-        dn_locs, dn = self.find_dn()
-        dpp_locs, dpp = self.find_dpp()
-        spo_locs, spo = self.find_spo()
-        spp_locs, dn_locs = self.to_time(spp_locs), self.to_time(dn_locs)
-        dpp_locs, spo_locs = self.to_time(dpp_locs), self.to_time(spo_locs)
-        plt.scatter(spp_locs[i], spp[i] + sft, label="SPP", color="green", marker="v", s=80, zorder=2)
-        # plt.scatter(dn_locs[i], dn[i] + sft, label="DN", color="red", marker="v", s=80, zorder=2)
-        # plt.scatter(dpp_locs[i], dpp[i] + sft, label="DPP", color="orange", marker="v", s=80, zorder=2)
-        plt.scatter(spo_locs[i], spo[i] + sft, label="SPO", color="purple", marker="v", s=80, zorder=2)
-        # plt.scatter(spo_locs[i + 1], spo[i + 1] + sft, label="DPE", color="brown", marker="v", s=80, zorder=2)
-        if signal_type.lower() == "cbfv":
-            plt.vlines(x=spp_locs[i], ymin=48.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
-            plt.vlines(x=spp_locs[i + 1], ymin=48.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
-            plt.scatter(spp_locs[i] + arrow, 50, color="darkolivegreen", marker="<", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1] - arrow, 50, color="darkolivegreen", marker=">", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
-            plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
-            plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
-            plt.plot([spp_locs[i] - arrow, spp_locs[i + 1] + arrow], [50, 50], color="darkolivegreen", linewidth=1.5,
-                     label="RR interval", zorder=2)
-            plt.ylabel(r"CBFV [$\mathrm{cm \cdot s^{-1}}$]", fontsize=12)
-        else:
-            plt.vlines(x=spp_locs[i], ymin=98.5, ymax=spp[i], color="darkolivegreen", linestyle="--")
-            plt.vlines(x=spp_locs[i + 1], ymin=98.5, ymax=spp[i + 1], color="darkolivegreen", linestyle="--")
-            plt.scatter(spp_locs[i] + arrow, 100, color="darkolivegreen", marker="<", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1] - arrow, 100, color="darkolivegreen", marker=">", s=80, zorder=2)
-            plt.scatter(spp_locs[i + 1], spp[i + 1] + sft, color="green", marker="v", s=80, zorder=2)
-            # plt.scatter(dn_locs[i + 1], dn[i + 1] + sft, color="red", marker="v", s=80, zorder=2)
-            # plt.scatter(dpp_locs[i + 1], dpp[i + 1] + sft, color="orange", marker="v", s=80, zorder=2)
-            plt.plot([spp_locs[i] - arrow, spp_locs[i + 1] + arrow], [100, 100], color="darkolivegreen", linewidth=1.5,
-                     label="RR interval", zorder=2)
-            plt.ylabel("ABP [mmHg]", fontsize=12)
-        plt.title(f"{signal_type.upper()} metrics", fontsize=16)
-        plt.xlabel("Time [ms]", fontsize=12)
-        plt.xlim(left=wd_datetime[0], right=wd_datetime[-1])
-        plt.legend()
-        plt.tight_layout()
+        fig, ax = plt.subplots(figsize=(6.3, 3.2))
+        self.draw_window(ax, wd_number)
+        ax.set_ylabel(UNITS[self.signal_type.lower()])
+        ax.set_xlabel("Time [ms]")
+        ax.legend(loc="upper right", frameon=False, fontsize=9)
+        fig.tight_layout()
         if output_path is not None:
-            plt.savefig(output_path, format="pdf")
+            fig.savefig(output_path, format="pdf")
         plt.show()
-        plt.close()
+        plt.close(fig)
 
     def plot_pulsation(self, wd_number=None, output_path=None):
         """

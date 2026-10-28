@@ -12,7 +12,7 @@ from scipy import signal as sp_sig
 from scipy.signal import find_peaks
 
 from ddtw_ml.stages.beats import ComputeBeatMetrics
-from ddtw_ml.stages.beats.metrics import FromSignal
+from ddtw_ml.stages.beats.metrics import FromSignal, plot_cycle_metrics
 from ddtw_ml.stages.beats.troughs import detect_peaks_troughs_optimized
 from ddtw_ml.stages.normalised import NormaliseBeatMetrics, PreprocessMetrics
 from ddtw_ml.stages.paired import PairBeatMetrics
@@ -105,6 +105,26 @@ def test_metric_positions_and_window_plots_are_in_ms(tmp_path, no_latex, monkeyp
     from_signal.plot_window(1, output_path=tmp_path / "window.pdf")
     from_signal.plot_pulsation(1, output_path=tmp_path / "pulsation.svg")
     assert (tmp_path / "window.pdf").exists() and (tmp_path / "pulsation.svg").exists()
+
+
+def test_cycle_metrics_plot_marks_both_cycles_and_their_rr(tmp_path, no_latex):
+    t = np.arange(3000) / 200
+    abp = FromSignal(t * 1000, 90 + 15 * np.sin(2 * np.pi * 1.2 * t), "abp")
+    cbfv = FromSignal(t * 1000, 60 + 20 * np.sin(2 * np.pi * 1.2 * t + 0.3), "cbfv")
+    fig, ax = plt.subplots()
+    t0, (left, right), rr = abp.draw_window(ax, 1)
+    spo_locs, _ = abp.find_spo()
+    assert t0 == abp.to_time(spo_locs)[1] and left < 0 < right
+    # RR in ms: one beat every 1 / 1.2 s, up to one sample (5 ms)
+    assert abs(rr - 1000 / 1.2) <= 5
+    # two SPO and two SPP markers
+    assert [len(c.get_offsets()) for c in ax.collections] == [2, 2]
+    plt.close(fig)
+    with pytest.raises(ValueError):
+        abp.draw_window(plt.subplots()[1], len(abp.wd) - 2)
+    plt.close("all")
+    plot_cycle_metrics(abp, cbfv, 1, 1, output_path=tmp_path / "cycle.pdf")
+    assert (tmp_path / "cycle.pdf").exists()
 
 
 def test_find_spo_starts_at_the_first_sample_and_keeps_one_location_per_value():
